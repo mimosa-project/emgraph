@@ -39,7 +39,7 @@ class Node:
         return f"name: {name}, target_nodes: {target_nodes}, source_nodes: {source_nodes}, (x, y)= ({x}, {y})"
 
 
-def name2node(input_node_dict):
+def create_node_list(input_node_dict):
     """
     input_node_dictをNodeクラスでインスタンス化したものをリストにまとめる。
     各属性には次の物を格納する。
@@ -60,25 +60,25 @@ def name2node(input_node_dict):
         インスタンス化されたノードのリスト。
     """
     node_list = []
-    node_dict = {}
+    name2node = {}
     # node_dict, node_listの作成
     # k: ノードの名前(str)、v[1]: ノードkのリンクURL(str)
     for k, v in input_node_dict.items():
         n = Node(name=k, href=v[1])
-        node_dict[k] = n
+        name2node[k] = n
         node_list.append(n)
 
     # target_nodesの作成
     # k: ノードの名前(str)、v[0]: ノードkがターゲットとするノードの名前(str)の集合
     for k, v in input_node_dict.items():
         for target in v[0]:
-            node_dict[k].target_nodes.add(node_dict[target])
+            name2node[k].target_nodes.add(name2node[target])
 
     # source_nodesの作成
     # k: ノードの名前(str)、v: ノードkのNodeオブジェクト(object)
-    for k, v in node_dict.items():
+    for k, v in name2node.items():
         for target in v.target_nodes:
-            target.source_nodes.add(node_dict[k])
+            target.source_nodes.add(name2node[k])
     return node_list
 
 
