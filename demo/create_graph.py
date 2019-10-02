@@ -12,16 +12,16 @@ import json
 class Node:
     """
     ノードをクラスとして定義する。
-
     Attributes:
         name: ノードの名前。str()。
-        target_nodes: 自身が指しているノードの集合。set()。
-        source_nodes: 自身を指しているノードの集合。set()。
-        x, y: ノードの座標(x,y)。ともにint()。
-        href: ノードのリンク。str()。
-        is_dummy: ノードがダミーか否か。bool()。
+        target_nodes: 自身が指しているノードの集合。set()。デフォルトは空集合set()。
+        source_nodes: 自身を指しているノードの集合。set()。デフォルトは空集合set()。
+        x, y: ノードの座標(x,y)。ともにint()。デフォルトは-1。
+        href: ノードのリンク。str()。デフォルトは空列 ""。
+        is_dummy: ノードがダミーか否か。bool()。デフォルトはFalse。
     """
-    def __init__(self, name, target_nodes, source_nodes, x, y, href, is_dummy):
+
+    def __init__(self, name, target_nodes=set(), source_nodes=set(), x=-1, y=-1, href="", is_dummy=False):
         self.name = name
         self.target_nodes = target_nodes
         self.source_nodes = source_nodes
@@ -39,7 +39,7 @@ class Node:
         return f"name: {name}, target_nodes: {target_nodes}, source_nodes: {source_nodes}, (x, y)= ({x}, {y})"
 
 
-def create_node_list():
+def name2node(input_node_dict):
     """
     input_node_dictをNodeクラスでインスタンス化したものをリストにまとめる。
     各属性には次の物を格納する。
@@ -62,21 +62,23 @@ def create_node_list():
     node_list = []
     node_dict = {}
     # node_dict, node_listの作成
+    # k: ノードの名前(str)、v[1]: ノードkのリンクURL(str)
     for k, v in input_node_dict.items():
-        n = Node(k, set(), set(), -1, -1, v[1], False)
+        n = Node(name=k, href=v[1])
         node_dict[k] = n
         node_list.append(n)
-        
+
     # target_nodesの作成
+    # k: ノードの名前(str)、v[0]: ノードkがターゲットとするノードの名前(str)の集合
     for k, v in input_node_dict.items():
         for target in v[0]:
             node_dict[k].target_nodes.add(node_dict[target])
-            
+
     # source_nodesの作成
+    # k: ノードの名前(str)、v: ノードkのNodeオブジェクト(object)
     for k, v in node_dict.items():
         for target in v.target_nodes:
             target.source_nodes.add(node_dict[k])
-
     return node_list
 
 
@@ -91,21 +93,14 @@ def main():
     def shuffle_dict(d):
         """
         辞書（のキー）の順番をランダムにする
-
         Args:
             d: 順番をランダムにしたい辞書。
-
         Return:
             dの順番をランダムにしたもの
         """
         keys = list(d.keys())
         random.shuffle(keys)
-        [(key, d[key]) for key in keys]
-        random.shuffle(keys)
-        [(key, d[key]) for key in keys]
-        random.shuffle(keys)
-        keys = [(key, d[key]) for key in keys]
-        return dict(keys)
+        return dict([(key, d[key]) for key in keys])
 
     """
        input_node_dict: 全ノードについての情報を辞書にまとめたもの。dict()
