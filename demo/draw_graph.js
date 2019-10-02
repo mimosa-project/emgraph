@@ -6,7 +6,7 @@ $(function(){
     $.getJSON("./demo_sample.json", function(graph_data) {
         //描画(graph_draw()をここに書き写す)
         // cytoscapeグラフの作成(初期化)
-        var cy = cytoscape({
+        let cy = cytoscape({
             container: document.getElementById('demo'),
             elements: [],
 
@@ -15,8 +15,8 @@ $(function(){
             selectionType: "additive"
         });
         // グラフにノードを追加
-        for(var data in graph_data["elements"]["nodes"]){
-            for(var component in graph_data["elements"]["nodes"][data]){
+        for(let data in graph_data["elements"]["nodes"]){
+            for(let component in graph_data["elements"]["nodes"][data]){
                 cy.add({
                     group: "nodes",
                     data:{
@@ -33,8 +33,8 @@ $(function(){
             }
         }
         // グラフにエッジを追加
-        for(var data in graph_data["elements"]["edges"]){
-            for(var component in graph_data["elements"]["edges"][data]){
+        for(let data in graph_data["elements"]["edges"]){
+            for(let component in graph_data["elements"]["edges"][data]){
                 cy.add({
                     group: "edges",
                     data:{
