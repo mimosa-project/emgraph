@@ -8,33 +8,130 @@
 import networkx as nx
 import json
 
-# ノード同士の関係
-node_dict = {"f": {"e", "b", "a"}, "g": {"e"}, "h": {"g", "f"}, "i": {"a"},
-             "o": {"m", "l"}, "p": {"n", "k"}, "q": {"k", "o", "i"},
-             "j": {"i"}, "k": {"j", "m"}, "l": {"i", "a"}, "m": {"i"}, "n": {"j", "m"},
-             "a": set(), "b": {"a"}, "c": {"b", "e"}, "d": {"c", "a"}, "e": {"a"}}
 
-# 各ノードの属性値 node_attrs = {node_name: {"x": x, "y": y, "dummy": 0 or 1}
-# x: x座標の値、y: y座標の値, dummy: ダミーノードか否か(0：ダミーでない、1:ダミーである)
-node_attrs = {}
+class Node:
+    """
+    ノードをクラスとして定義する。
+    Attributes:
+        name: ノードの名前。str()。
+        target_nodes: 自身が指しているノードの集合。set()。デフォルトは空集合set()。
+        source_nodes: 自身を指しているノードの集合。set()。デフォルトは空集合set()。
+        x, y: ノードの座標(x,y)。ともにint()。デフォルトは-1。
+        href: ノードのリンク。str()。デフォルトは空列 ""。
+        is_dummy: ノードがダミーか否か。bool()。デフォルトはFalse。
+    """
 
-# 有向グラフGraphの作成
-Graph = nx.DiGraph()
+    def __init__(self, name, target_nodes=set(), source_nodes=set(), x=-1, y=-1, href="", is_dummy=False):
+        self.name = name
+        self.target_nodes = target_nodes
+        self.source_nodes = source_nodes
+        self.x = x
+        self.y = y
+        self.href = href
+        self.is_dummy = is_dummy
 
-# 依存関係グラフの作成
-for base_node in node_dict.keys():
-    Graph.add_node(base_node)
-    for obtained_node, parent_nodes in node_dict.items():
-        for parent_node in parent_nodes:
-            if base_node == parent_node:
-                Graph.add_node(parent_node)
-                Graph.add_edge(obtained_node, base_node)
+    def __str__(self):
+        name = self.name
+        target_nodes = self.target_nodes
+        source_nodes = self.source_nodes
+        x = self.x
+        y = self.y
+        return f"name: {name}, target_nodes: {target_nodes}, source_nodes: {source_nodes}, (x, y)= ({x}, {y})"
 
-# グラフの描画
-nx.draw_networkx(Graph)
 
-# cytoscape.jsの記述形式(JSON)でグラフを記述
-graph_json = nx.cytoscape_data(Graph, attrs=None)
+def create_node_list(input_node_dict):
+    """
+    input_node_dictをNodeクラスでインスタンス化したものをリストにまとめる。
+    各属性には次の物を格納する。
+        ・name:  input_node_dictのkey。str。
+        ・target_nodes: input_node_dictのvalueの第一要素。set()。
+        ・source_nodes: target_nodesをもとに作成したsource_nodes。set()。
+        ・x, y: -1。int。
+        ・href: INPUT_NODE_DICTのvalueの第二要素。str。
+        ・is_dummy: False。bool。
 
-with open('demo_sample.json', 'w') as f:
-    f.write(json.dumps(graph_json))
+    Args:
+        input_node_dict: 入力されたノードの関係を示す辞書型データ。
+                         ノードの名前をキーに持ち、値としてリストを持つ。リストの要素は次のようになる。
+                             第1要素: keyのノードが指すノードの集合。set()
+                             第2要素: keyのノードのリンク先URL。str()   
+        
+    Returns:
+        インスタンス化されたノードのリスト。
+    """
+    node_list = []
+    name2node = {}
+    # node_dict, node_listの作成
+    # k: ノードの名前(str)、v[1]: ノードkのリンクURL(str)
+    for k, v in input_node_dict.items():
+        n = Node(name=k, href=v[1])
+        name2node[k] = n
+        node_list.append(n)
+
+    # target_nodesの作成
+    # k: ノードの名前(str)、v[0]: ノードkがターゲットとするノードの名前(str)の集合
+    for k, v in input_node_dict.items():
+        for target in v[0]:
+            name2node[k].target_nodes.add(name2node[target])
+
+    # source_nodesの作成
+    # k: ノードの名前(str)、v: ノードkのNodeオブジェクト(object)
+    for k, v in name2node.items():
+        for target in v.target_nodes:
+            target.source_nodes.add(name2node[k])
+    return node_list
+
+
+def main():
+    """
+    関数の実行を行う関数。
+
+    Return:
+    """
+    import random
+
+    def shuffle_dict(d):
+        """
+        辞書（のキー）の順番をランダムにする
+        Args:
+            d: 順番をランダムにしたい辞書。
+        Return:
+            dの順番をランダムにしたもの
+        """
+        keys = list(d.keys())
+        random.shuffle(keys)
+        return dict([(key, d[key]) for key in keys])
+
+    """
+       input_node_dict: 全ノードについての情報を辞書にまとめたもの。dict()
+           key: ノードの名前。
+           value: リスト
+               第1要素: keyのノードが指すノードの集合。set()
+               第2要素: keyのノードのリンク先URL。str()
+
+    """
+    input_node_dict = {"a": [set(), "example.html"],
+                       "b": [{"a"}, "example.html"],
+                       "c": [{"b", "e"}, "example.html"],
+                       "d": [{"c", "a"}, "example.html"],
+                       "e": [{"a"}, "example.html"],
+                       "f": [{"e", "b", "a"}, "example.html"],
+                       "g": [{"e"}, "example.html"],
+                       "h": [{"g", "f"}, "example.html"],
+                       "i": [{"a"}, "example.html"],
+                       "j": [{"i"}, "example.html"],
+                       "k": [{"j", "m"}, "example.html"],
+                       "l": [{"i", "a"}, "example.html"],
+                       "m": [{"i"}, "example.html"],
+                       "n": [{"j", "m"}, "example.html"],
+                       "o": [{"m", "l"}, "example.html"],
+                       "p": [{"n", "k"}, "example.html"],
+                       "q": [{"k", "o", "i"}, "example.html"],
+                       }
+
+    node_list = create_node_list(shuffle_dict(input_node_dict))
+
+    
+if __name__ == "__main__":
+    main()
+    
