@@ -21,14 +21,14 @@ class Node:
         is_dummy: ノードがダミーか否か。bool()。デフォルトはFalse。
     """
 
-    def __init__(self, name, target_nodes=set(), source_nodes=set(), x=-1, y=-1, href="", is_dummy=False):
+    def __init__(self, name, target_nodes=None, source_nodes=None, x=None, y=None, href=None, is_dummy=None):
         self.name = name
-        self.target_nodes = target_nodes
-        self.source_nodes = source_nodes
-        self.x = x
-        self.y = y
-        self.href = href
-        self.is_dummy = is_dummy
+        self.target_nodes = set() if target_nodes is None else target_nodes
+        self.source_nodes = set() if source_nodes is None else source_nodes
+        self.x = -1 if x is None else x
+        self.y = -1 if y is None else y
+        self.href = "" if href is None else href
+        self.is_dummy = False if is_dummy is None else is_dummy
 
     def __str__(self):
         name = self.name
@@ -80,8 +80,8 @@ def create_node_list(input_node_dict):
         for target in v.target_nodes:
             target.source_nodes.add(name2node[k])
     return node_list
-
-
+            
+            
 def main():
     """
     関数の実行を行う関数。
@@ -130,7 +130,7 @@ def main():
                        }
 
     node_list = create_node_list(shuffle_dict(input_node_dict))
-
+    
     
 if __name__ == "__main__":
     main()
