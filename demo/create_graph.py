@@ -81,7 +81,54 @@ def create_node_list(input_node_dict):
             target.source_nodes.add(name2node[k])
     return node_list
             
-            
+           
+"""
+#1．階層割当(最長パス法)
+"""
+
+
+def assign_top_node(node_list):
+    """
+    グラフのルートを決定する。ルートは矢印が出ていない(参照をしていない)ノードとなる。
+　　その後、level2node()でその下の階層のノードを決めていく。
+
+    Args:
+        node_list:全ノードをNodeクラスでまとめたリスト。
+
+    Return:
+
+    """
+    for top_node in node_list:
+        if set() == top_node.target_nodes:
+            top_node.y = 0
+            top_node.x = 0
+            assign_level2node_recursion(node_list, top_node, 0)
+
+
+def assign_level2node_recursion(node_list, target, target_level):
+    """
+    階層が1以上（y座標が1以上）のノードの階層を再帰的に決定する。階層の割当は次のルールに従う。
+    ・まだ階層を割り当てていないノードならば、targetの1つ下の階層に割り当てる。そして、再帰する。
+    ・既に座標を割り当てており、その階層が今の階層(source_node_level)以上高い階層ならば、一つ下の階層に再割当する。
+　　・既に階層を割り当てており、その階層が今の階層よりも低い階層ならば、何もしない。
+
+    Args:
+        node_list: 全ノードをNodeクラスでまとめたリスト。
+        target: ターゲットとなるノード。このノードを指すノードに階層を割り当てていく。
+        target_level: targetの階層。targetを指すノードは基本的にこの階層の1つ下の階層に割り当てられる。
+    """
+    assign_node_level = target_level + 1
+    for assign_node in target.source_nodes:
+        if assign_node.x < 0:
+            assign_node.y = assign_node_level
+            assign_node.x = 0
+            assign_level2node_recursion(node_list, assign_node, assign_node_level)
+        elif assign_node.x > -1 and assign_node.y <= assign_node_level:
+            assign_node.y = assign_node_level
+        else:
+            pass
+
+
 def main():
     """
     関数の実行を行う関数。
@@ -130,6 +177,7 @@ def main():
                        }
 
     node_list = create_node_list(shuffle_dict(input_node_dict))
+    assign_top_node(node_list)
     
     
 if __name__ == "__main__":
