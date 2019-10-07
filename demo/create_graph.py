@@ -99,13 +99,13 @@ def assign_top_node(node_list):
 
     """
     for top_node in node_list:
-        if set() == top_node.target_nodes:
+        if not top_node.target_nodes:
             top_node.y = 0
             top_node.x = 0
-            assign_level2node_recursion(node_list, top_node, 0)
+            assign_level2node_recursively(node_list, top_node, 0)
 
 
-def assign_level2node_recursion(node_list, target, target_level):
+def assign_level2node_recursively(node_list, target, target_level):
     """
     階層が1以上（y座標が1以上）のノードの階層を再帰的に決定する。階層の割当は次のルールに従う。
     ・まだ階層を割り当てていないノードならば、targetの1つ下の階層に割り当てる。そして、再帰する。
@@ -122,11 +122,9 @@ def assign_level2node_recursion(node_list, target, target_level):
         if assign_node.x < 0:
             assign_node.y = assign_node_level
             assign_node.x = 0
-            assign_level2node_recursion(node_list, assign_node, assign_node_level)
+            assign_level2node_recursively(node_list, assign_node, assign_node_level)
         elif assign_node.x > -1 and assign_node.y <= assign_node_level:
             assign_node.y = assign_node_level
-        else:
-            pass
 
 
 def main():
