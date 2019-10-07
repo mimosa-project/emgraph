@@ -127,6 +127,23 @@ def assign_level2node_recursively(node_list, target, target_level):
             assign_node.y = assign_node_level
 
 
+def assign_x_coordinate(node_list):
+    """
+    全てのノードに対して、x座標を割り当てる。
+
+    Args:
+        node_list:全ノードをNodeクラスでまとめたリスト。
+    """
+    number_of_levels = max([node.y for node in node_list])
+    level2assign = 0
+    while level2assign <= number_of_levels:
+        x_coordinate = 0
+        for equal_level_node in [node for node in node_list if node.y == level2assign]:
+            equal_level_node.x = x_coordinate
+            x_coordinate += 1
+        level2assign += 1
+
+
 def main():
     """
     関数の実行を行う関数。
@@ -176,6 +193,7 @@ def main():
 
     node_list = create_node_list(shuffle_dict(input_node_dict))
     assign_top_node(node_list)
+    assign_x_coordinate(node_list)
     
     
 if __name__ == "__main__":
