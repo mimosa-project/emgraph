@@ -47,7 +47,6 @@ class Stack:
 
     Attributes:
         items: スタックの内容。list。
-
     """
     def __init__(self):
         self.items = []
@@ -187,6 +186,65 @@ def assign_x_coordinate(node_list):
         y2x[node.y] += 1
 
 
+"""
+#2. 交差削減
+"""
+
+
+def find_over_2_level_edges(node_list):
+    """
+    階層が2以上はなれているエッジを見つけ、スタックに格納する。
+    その後、スタックの内容をcut_edge_and_insert_dummy()を用いてダミーノードを取得し、
+    それをnode_listに挿入し、階層差がすべて1になるようにする。
+
+    Args:
+        node_list:全ノードをNodeクラスでまとめたリスト。
+
+    Return:
+    """
+
+    cut_edge_stack = Stack()
+    for target_node in node_list:
+        for source_node in target_node.source_nodes:
+            if source_node.y - target_node.y > 1:
+                cut_edge_stack.push((source_node, target_node))
+
+    while cut_edge_stack.is_empty() is False:
+        source, target = cut_edge_stack.pop()
+        dummy = cut_edges_and_insert_dummy(source, target)
+        node_list.append(dummy)
+        if dummy.y - target.y > 1:
+            cut_edge_stack.push((dummy, target))
+
+
+@Count
+def cut_edges_and_insert_dummy(source, target):
+    """
+    source_nodeとtarget_nodeのエッジを切り、その間にダミーノードを挿入する。
+
+    Args:
+        source: target_nodesからtargetを取り除き、間にダミーノードを入れたいノード。Nodeオブジェクト。
+        target: source_nodesからsourceを取り除き、間にダミーノードを入れたいノード。Nodeオブジェクト。
+
+    Return:
+        dummy: sourceとtargetの間に挿入したダミーノード。Nodeオブジェクト。
+    """
+    dummy_counter = cut_edges_and_insert_dummy.count
+    source.target_nodes.remove(target)
+    target.source_nodes.remove(source)
+    dummy = Node("dummy" + str(dummy_counter),
+                 target_nodes={target},
+                 source_nodes={source},
+                 x=0,
+                 y=source.y-1,
+                 is_dummy=True
+                 )
+    source.target_nodes.add(dummy)
+    target.source_nodes.add(dummy)
+
+    return dummy
+
+
 def main():
     """
     関数の実行を行う関数。
@@ -237,7 +295,8 @@ def main():
     node_list = create_node_list(shuffle_dict(input_node_dict))
     assign_top_node(node_list)
     assign_x_coordinate(node_list)
-    
+    find_over_2_level_edges(node_list)
+    assign_x_coordinate(node_list)
     
 if __name__ == "__main__":
     main()
