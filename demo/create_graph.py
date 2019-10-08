@@ -135,13 +135,14 @@ def assign_x_coordinate(node_list):
         node_list:全ノードをNodeクラスでまとめたリスト。
     """
     number_of_levels = max([node.y for node in node_list])
-    level2assign = 0
-    while level2assign <= number_of_levels:
+    level = 0
+    while level <= number_of_levels:
         x_coordinate = 0
-        for equal_level_node in [node for node in node_list if node.y == level2assign]:
-            equal_level_node.x = x_coordinate
-            x_coordinate += 1
-        level2assign += 1
+        for node in node_list:
+            if node.y == level:
+                node.x = x_coordinate
+                x_coordinate += 1
+        level += 1
 
 
 def main():
