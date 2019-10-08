@@ -7,6 +7,7 @@
 """
 import networkx as nx
 import json
+from collections import defaultdict
 
 
 class Node:
@@ -134,15 +135,10 @@ def assign_x_coordinate(node_list):
     Args:
         node_list:全ノードをNodeクラスでまとめたリスト。
     """
-    number_of_levels = max([node.y for node in node_list])
-    level = 0
-    while level <= number_of_levels:
-        x_coordinate = 0
-        for node in node_list:
-            if node.y == level:
-                node.x = x_coordinate
-                x_coordinate += 1
-        level += 1
+    y2x = defaultdict(int)
+    for node in node_list:
+        node.x = y2x[node.y]
+        y2x[node.y] += 1
 
 
 def main():
