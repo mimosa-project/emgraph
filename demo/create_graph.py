@@ -13,6 +13,7 @@ from collections import defaultdict
 class Node:
     """
     ノードをクラスとして定義する。
+    
     Attributes:
         name: ノードの名前。str()。
         target_nodes: 自身が指しているノードの集合。set()。デフォルトは空集合set()。
@@ -38,6 +39,51 @@ class Node:
         x = self.x
         y = self.y
         return f"name: {name}, target_nodes: {target_nodes}, source_nodes: {source_nodes}, (x, y)= ({x}, {y})"
+
+
+class Stack:
+    """
+    スタック構造のクラス。
+
+    Attributes:
+        items: スタックの内容。list。
+
+    """
+    def __init__(self):
+        self.items = []
+
+    def is_empty(self):
+        """スタック内が空かどうか調べる"""
+        return self.items == []
+
+    def push(self, item):
+        """スタックに値をプッシュする"""
+        self.items.append(item)
+
+    def pop(self):
+        """スタックの内容をポップする"""
+        return self.items.pop()
+
+
+class Count:
+    """
+    関数が何度呼ばれたかをカウントするクラス。
+
+    Attributes:
+        count: 関数funcを読んだ回数。int。
+        func: 関数オブジェクト。
+    """
+    def __init__(self, func):
+        self.count = 0
+        self.func = func
+
+    def __call__(self, *args, **kwargs):
+        self.count += 1
+        return self.func(*args, **kwargs)
+
+    def reset(self):
+        """カウンタをリセットする"""
+        self.count = 0
 
 
 def create_node_list(input_node_dict):
