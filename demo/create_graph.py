@@ -7,6 +7,7 @@
 """
 import networkx as nx
 import json
+from collections import defaultdict
 
 
 class Node:
@@ -127,6 +128,19 @@ def assign_level2node_recursively(node_list, target, target_level):
             assign_node.y = assign_node_level
 
 
+def assign_x_coordinate(node_list):
+    """
+    全てのノードに対して、x座標を割り当てる。
+
+    Args:
+        node_list:全ノードをNodeクラスでまとめたリスト。
+    """
+    y2x = defaultdict(int)
+    for node in node_list:
+        node.x = y2x[node.y]
+        y2x[node.y] += 1
+
+
 def main():
     """
     関数の実行を行う関数。
@@ -176,6 +190,7 @@ def main():
 
     node_list = create_node_list(shuffle_dict(input_node_dict))
     assign_top_node(node_list)
+    assign_x_coordinate(node_list)
     
     
 if __name__ == "__main__":
