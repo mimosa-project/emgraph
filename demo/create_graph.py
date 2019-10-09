@@ -13,6 +13,7 @@ from collections import defaultdict
 class Node:
     """
     ノードをクラスとして定義する。
+
     Attributes:
         name: ノードの名前。str()。
         target_nodes: 自身が指しているノードの集合。set()。デフォルトは空集合set()。
@@ -40,6 +41,50 @@ class Node:
         return f"name: {name}, target_nodes: {target_nodes}, source_nodes: {source_nodes}, (x, y)= ({x}, {y})"
 
 
+class Stack:
+    """
+    スタック構造のクラス。
+
+    Attributes:
+        items: スタックの内容。list。
+    """
+    def __init__(self):
+        self.items = []
+
+    def is_empty(self):
+        """スタック内が空かどうか調べる"""
+        return self.items == []
+
+    def push(self, item):
+        """スタックに値をプッシュする"""
+        self.items.append(item)
+
+    def pop(self):
+        """スタックの内容をポップする"""
+        return self.items.pop()
+
+
+class Count:
+    """
+    関数が何度呼ばれたかをカウントするクラス。
+
+    Attributes:
+        count: 関数funcを読んだ回数。int。
+        func: 関数オブジェクト。
+    """
+    def __init__(self, func):
+        self.count = 0
+        self.func = func
+
+    def __call__(self, *args, **kwargs):
+        self.count += 1
+        return self.func(*args, **kwargs)
+
+    def reset(self):
+        """カウンタをリセットする"""
+        self.count = 0
+
+
 def create_node_list(input_node_dict):
     """
     input_node_dictをNodeクラスでインスタンス化したものをリストにまとめる。
@@ -55,8 +100,8 @@ def create_node_list(input_node_dict):
         input_node_dict: 入力されたノードの関係を示す辞書型データ。
                          ノードの名前をキーに持ち、値としてリストを持つ。リストの要素は次のようになる。
                              第1要素: keyのノードが指すノードの集合。set()
-                             第2要素: keyのノードのリンク先URL。str()   
-        
+                             第2要素: keyのノードのリンク先URL。str()
+
     Returns:
         インスタンス化されたノードのリスト。
     """
@@ -81,8 +126,8 @@ def create_node_list(input_node_dict):
         for target in v.target_nodes:
             target.source_nodes.add(name2node[k])
     return node_list
-            
-           
+
+
 """
 #1．階層割当(最長パス法)
 """
@@ -97,7 +142,6 @@ def assign_top_node(node_list):
         node_list:全ノードをNodeクラスでまとめたリスト。
 
     Return:
-
     """
     for top_node in node_list:
         if not top_node.target_nodes:
@@ -141,6 +185,87 @@ def assign_x_coordinate(node_list):
         y2x[node.y] += 1
 
 
+"""
+#2. 交差削減
+"""
+
+
+def cut_edges_higher_than_1(node_list):
+    """
+    階層が2以上はなれているエッジを見つけ、スタックに格納する。
+    その後、スタックの内容をcut_edge()を用いてダミーノードを取得し、
+    それをnode_listに挿入し、階層差がすべて1になるようにする。
+
+    Args:
+        node_list:全ノードをNodeクラスでまとめたリスト。
+
+    Return:
+    """
+    cut_edge_stack = Stack()
+    for target in node_list:
+        for source in target.source_nodes:
+            if calc_edge_height(source, target) > 1:
+                cut_edge_stack.push((source, target))
+
+    while cut_edge_stack.is_empty() is False:
+        source, target = cut_edge_stack.pop()
+        dummy = cut_edge(source, target)
+        # dummyの内容はcut_edges()のReturn:を参照。
+        node_list.append(dummy)
+        if calc_edge_height(dummy, target) > 1:
+            cut_edge_stack.push((dummy, target))
+
+
+def calc_edge_height(node1, node2):
+    """
+    node1とnode2の階層差を返す
+
+    Args:
+        node1, node2: 階層差を比較するノード。Nodeオブジェクト。
+
+    Return:
+         node1, node2の階層差。絶対値でint。
+    """
+    return abs(node1.y - node2.y)
+
+
+@Count
+def cut_edge(source, target):
+    """
+    source_nodeとtarget_nodeのエッジを切り、その間にダミーノードを挿入する。
+
+    Args:
+        source: target_nodesからtargetを取り除き、間にダミーノードを入れたいノード。Nodeオブジェクト。
+        target: source_nodesからsourceを取り除き、間にダミーノードを入れたいノード。Nodeオブジェクト。
+
+    Return:
+        dummy: sourceとtargetの間に挿入したダミーノード。階層はsourceの一つ上にする。Nodeオブジェクト。
+            属性は次のように設定する。
+            name: "dummy1"(数字はインクリメントしていく)。
+            target_nodes: 要素がtargetのみの集合。
+            source_nodes: 要素がsourceのみの集合。
+            x: 0
+            y: source.y-1
+            href: ""
+            is_dummy: True
+    """
+    assert calc_edge_height(source, target) > 1
+    dummy_counter = cut_edge.count
+    source.target_nodes.remove(target)
+    target.source_nodes.remove(source)
+    dummy = Node("dummy" + str(dummy_counter),
+                 target_nodes={target},
+                 source_nodes={source},
+                 x=0,
+                 y=source.y-1,
+                 is_dummy=True
+                 )
+    source.target_nodes.add(dummy)
+    target.source_nodes.add(dummy)
+
+    return dummy
+
+
 def main():
     """
     関数の実行を行う関数。
@@ -152,8 +277,10 @@ def main():
     def shuffle_dict(d):
         """
         辞書（のキー）の順番をランダムにする
+
         Args:
             d: 順番をランダムにしたい辞書。
+
         Return:
             dの順番をランダムにしたもの
         """
@@ -167,7 +294,6 @@ def main():
            value: リスト
                第1要素: keyのノードが指すノードの集合。set()
                第2要素: keyのノードのリンク先URL。str()
-
     """
     input_node_dict = {"a": [set(), "example.html"],
                        "b": [{"a"}, "example.html"],
@@ -191,8 +317,9 @@ def main():
     node_list = create_node_list(shuffle_dict(input_node_dict))
     assign_top_node(node_list)
     assign_x_coordinate(node_list)
-    
-    
+    cut_edges_higher_than_1(node_list)
+    assign_x_coordinate(node_list)
+
+
 if __name__ == "__main__":
     main()
-    
