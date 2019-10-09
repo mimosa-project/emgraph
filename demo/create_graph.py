@@ -13,7 +13,7 @@ from collections import defaultdict
 class Node:
     """
     ノードをクラスとして定義する。
-    
+
     Attributes:
         name: ノードの名前。str()。
         target_nodes: 自身が指しているノードの集合。set()。デフォルトは空集合set()。
@@ -100,8 +100,8 @@ def create_node_list(input_node_dict):
         input_node_dict: 入力されたノードの関係を示す辞書型データ。
                          ノードの名前をキーに持ち、値としてリストを持つ。リストの要素は次のようになる。
                              第1要素: keyのノードが指すノードの集合。set()
-                             第2要素: keyのノードのリンク先URL。str()   
-        
+                             第2要素: keyのノードのリンク先URL。str()
+
     Returns:
         インスタンス化されたノードのリスト。
     """
@@ -126,8 +126,8 @@ def create_node_list(input_node_dict):
         for target in v.target_nodes:
             target.source_nodes.add(name2node[k])
     return node_list
-            
-           
+
+
 """
 #1．階層割当(最長パス法)
 """
@@ -142,7 +142,6 @@ def assign_top_node(node_list):
         node_list:全ノードをNodeクラスでまとめたリスト。
 
     Return:
-
     """
     for top_node in node_list:
         if not top_node.target_nodes:
@@ -191,10 +190,10 @@ def assign_x_coordinate(node_list):
 """
 
 
-def find_over_2_level_edges(node_list):
+def cut_edges_higher_than_1(node_list):
     """
     階層が2以上はなれているエッジを見つけ、スタックに格納する。
-    その後、スタックの内容をcut_edge_and_insert_dummy()を用いてダミーノードを取得し、
+    その後、スタックの内容をcut_edge()を用いてダミーノードを取得し、
     それをnode_listに挿入し、階層差がすべて1になるようにする。
 
     Args:
@@ -202,23 +201,36 @@ def find_over_2_level_edges(node_list):
 
     Return:
     """
-
     cut_edge_stack = Stack()
-    for target_node in node_list:
-        for source_node in target_node.source_nodes:
-            if source_node.y - target_node.y > 1:
-                cut_edge_stack.push((source_node, target_node))
+    for target in node_list:
+        for source in target.source_nodes:
+            if calc_edge_height(source, target) > 1:
+                cut_edge_stack.push((source, target))
 
     while cut_edge_stack.is_empty() is False:
         source, target = cut_edge_stack.pop()
-        dummy = cut_edges_and_insert_dummy(source, target)
+        dummy = cut_edge(source, target)
+        # dummyの内容はcut_edges()のReturn:を参照。
         node_list.append(dummy)
-        if dummy.y - target.y > 1:
+        if calc_edge_height(dummy, target) > 1:
             cut_edge_stack.push((dummy, target))
 
 
+def calc_edge_height(node1, node2):
+    """
+    node1とnode2の階層差を返す
+
+    Args:
+        node1, node2: 階層差を比較するノード。Nodeオブジェクト。
+
+    Return:
+         node1, node2の階層差。絶対値でint。
+    """
+    return abs(node1.y - node2.y)
+
+
 @Count
-def cut_edges_and_insert_dummy(source, target):
+def cut_edge(source, target):
     """
     source_nodeとtarget_nodeのエッジを切り、その間にダミーノードを挿入する。
 
@@ -227,9 +239,18 @@ def cut_edges_and_insert_dummy(source, target):
         target: source_nodesからsourceを取り除き、間にダミーノードを入れたいノード。Nodeオブジェクト。
 
     Return:
-        dummy: sourceとtargetの間に挿入したダミーノード。Nodeオブジェクト。
+        dummy: sourceとtargetの間に挿入したダミーノード。階層はsourceの一つ上にする。Nodeオブジェクト。
+            属性は次のように設定する。
+            name: "dummy1"(数字はインクリメントしていく)。
+            target_nodes: 要素がtargetのみの集合。
+            source_nodes: 要素がsourceのみの集合。
+            x: 0
+            y: source.y-1
+            href: ""
+            is_dummy: True
     """
-    dummy_counter = cut_edges_and_insert_dummy.count
+    assert calc_edge_height(source, target) > 1
+    dummy_counter = cut_edge.count
     source.target_nodes.remove(target)
     target.source_nodes.remove(source)
     dummy = Node("dummy" + str(dummy_counter),
@@ -256,8 +277,10 @@ def main():
     def shuffle_dict(d):
         """
         辞書（のキー）の順番をランダムにする
+
         Args:
             d: 順番をランダムにしたい辞書。
+
         Return:
             dの順番をランダムにしたもの
         """
@@ -271,7 +294,6 @@ def main():
            value: リスト
                第1要素: keyのノードが指すノードの集合。set()
                第2要素: keyのノードのリンク先URL。str()
-
     """
     input_node_dict = {"a": [set(), "example.html"],
                        "b": [{"a"}, "example.html"],
@@ -295,9 +317,9 @@ def main():
     node_list = create_node_list(shuffle_dict(input_node_dict))
     assign_top_node(node_list)
     assign_x_coordinate(node_list)
-    find_over_2_level_edges(node_list)
+    cut_edges_higher_than_1(node_list)
     assign_x_coordinate(node_list)
-    
+
+
 if __name__ == "__main__":
     main()
-    
