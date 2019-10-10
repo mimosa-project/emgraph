@@ -266,6 +266,47 @@ def cut_edge(source, target):
     return dummy
 
 
+def node_list2node_dict(node_list):
+    """
+    ノードについての情報（属性）をリスト形式から辞書形式に変換する。
+
+    Args:
+        node_list:全ノードをNodeクラスでまとめたリスト。
+
+    Return:
+        各ノードのname, href, x, y, is_dummyを持つ辞書。
+        キーはnameで、その値としてhref, x, y, is_dummyをキーに持つ辞書が与えられる。
+        例:
+        node_dict = {"f": { "href": "example.html", "x": 0, "y": 2, "is_dummy": false}, ... }
+    """
+    node_dict = {}
+    for node in node_list:
+        node_name = str(node.name)
+        node_dict[node_name] = {}
+        node_dict[node_name]["href"] = str(node.href)
+        node_dict[node_name]["x"] = int(node.x)
+        node_dict[node_name]["y"] = int(node.y)
+        node_dict[node_name]["is_dummy"] = bool(node.is_dummy)
+    return node_dict
+
+
+def create_dependence_graph(node_list, graph):
+    """
+    依存関係を示すグラフを作成する。
+
+    Args:
+        node_list:全ノードをNodeクラスでまとめたリスト。
+        graph:操作する有向グラフ。networkx.DiGraph()
+
+    Return:
+    """
+    for source in node_list:
+        graph.add_node(source.name)
+        for target in source.target_nodes:
+            graph.add_node(target.name)
+            graph.add_edge(source.name, target.name)
+
+
 def main():
     """
     関数の実行を行う関数。
@@ -320,6 +361,23 @@ def main():
     cut_edges_higher_than_1(node_list)
     assign_x_coordinate(node_list)
 
+    node_attributes = node_list2node_dict(node_list)
 
+    # 有向グラフGraphの作成
+    graph = nx.DiGraph()
+
+    create_dependence_graph(node_list, graph)
+
+    # nodes_attrsを用いて各ノードの属性値を設定
+    nx.set_node_attributes(graph, node_attributes)
+
+    # グラフの描画
+    nx.draw_networkx(graph)
+
+    # cytoscape.jsの記述形式(JSON)でグラフを記述
+    graph_json = nx.cytoscape_data(graph, attrs=None)
+
+    with open('demo_sample.json', 'w') as f:
+        f.write(json.dumps(graph_json))
 if __name__ == "__main__":
     main()
