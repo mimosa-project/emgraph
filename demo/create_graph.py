@@ -266,6 +266,81 @@ def cut_edge(source, target):
     return dummy
 
 
+def sort_nodes_by_barycenter_top_to_bottom(node_list):
+    """
+    重心が小さいノードから左に配置する。
+    重心の計算はcalc_node_barycenter_at_targets()にて説明。
+    上の階層から下の階層へと操作を行う。
+
+    Args
+        node_list:全ノードをNodeクラスでまとめたリスト。
+
+    Return:
+    """
+    number_of_levels = max([node.y for node in node_list])
+    sort_level = 0
+    each_level_nodes = part_nodes_par_level(node_list)
+
+    while sort_level <= number_of_levels:
+        sort_level_nodes = each_level_nodes[sort_level]
+        # key: Nodeオブジェクト, value: keyのノードの重心
+        node_barycenter_dict = calc_node_barycenter_at_targets(sort_level_nodes)
+        # 辞書node_barycenter_dictをvalueの値(重心)が小さい順に並び変える。
+        barycenter_sorted = sorted(node_barycenter_dict.items(), key=lambda x: x[1])
+        sort_level_nodes = [node for node, barycenter in barycenter_sorted]
+        # 順にxを割り振る。
+        assign_x_coordinate(sort_level_nodes)
+        sort_level += 1
+
+
+def part_nodes_par_level(node_list):
+    """
+    ノードを階層ごとにkeyで分け、辞書形式で返す。
+
+    Args:
+        node_list:全ノードをNodeクラスでまとめたリスト。
+
+    Return:
+        each_level_nodes: key: 階層, value: 階層がkeyのノードのリスト　となる辞書。
+    """
+    each_level_nodes = {}
+    for node in node_list:
+        if node.y not in each_level_nodes:
+            each_level_nodes[node.y] = []
+        each_level_nodes[node.y].append(node)
+    return each_level_nodes
+
+
+def calc_node_barycenter_at_targets(sort_level_nodes):
+    """
+    nodeの重心をターゲットから計算する
+    重心の計算
+        ターゲットが存在する場合：重心 = (ターゲットのx座標の総和) / (ターゲットの数)
+        ターゲットが存在しない場合：重心 = 1000
+
+    Args:
+        sort_level_nodes: ソートしたい階層のノードのリスト。
+
+    Return:
+        barycenter_dict: key: Nodeオブジェクト, value: keyの重心
+    """
+    barycenter_dict = {}
+    for node in sort_level_nodes:
+        barycenter_sum = 0.0
+        for target in node.target_nodes:
+            barycenter_sum += target.x
+        if not node.target_nodes:
+            barycenter_dict[node] = 1000
+        else:
+            barycenter_dict[node] = barycenter_sum / len(node.target_nodes)
+    return barycenter_dict
+
+
+"""
+仕上げ
+"""
+
+
 def node_list2node_dict(node_list):
     """
     ノードについての情報（属性）をリスト形式から辞書形式に変換する。
@@ -360,6 +435,7 @@ def main():
     assign_x_coordinate(node_list)
     cut_edges_higher_than_1(node_list)
     assign_x_coordinate(node_list)
+    sort_nodes_by_barycenter_top_to_bottom(node_list)
 
     node_attributes = node_list2node_dict(node_list)
 
@@ -379,5 +455,7 @@ def main():
 
     with open('demo_sample.json', 'w') as f:
         f.write(json.dumps(graph_json))
+        
+        
 if __name__ == "__main__":
     main()
