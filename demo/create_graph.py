@@ -281,16 +281,16 @@ def node_list2node_dict(node_list):
     """
     node_dict = {}
     for node in node_list:
-        node_name = str(node.name)
-        node_dict[node_name] = {}
-        node_dict[node_name]["href"] = str(node.href)
-        node_dict[node_name]["x"] = int(node.x)
-        node_dict[node_name]["y"] = int(node.y)
-        node_dict[node_name]["is_dummy"] = bool(node.is_dummy)
+        node_dict[node.name] = {
+            "href": node.href,
+            "x": node.x,
+            "y": node.y,
+            "is_dummy": node.is_dummy
+        }
     return node_dict
 
 
-def create_dependence_graph(node_list, graph):
+def create_dependency_graph(node_list, graph):
     """
     依存関係を示すグラフを作成する。
 
@@ -366,7 +366,7 @@ def main():
     # 有向グラフGraphの作成
     graph = nx.DiGraph()
 
-    create_dependence_graph(node_list, graph)
+    create_dependency_graph(node_list, graph)
 
     # nodes_attrsを用いて各ノードの属性値を設定
     nx.set_node_attributes(graph, node_attributes)
