@@ -16,17 +16,17 @@ class Node:
 
     Attributes:
         name: ノードの名前。str()。
-        target_nodes: 自身が指しているノードの集合。set()。デフォルトは空集合set()。
-        source_nodes: 自身を指しているノードの集合。set()。デフォルトは空集合set()。
+        targets: 自身が指しているノードの集合。set()。デフォルトは空集合set()。
+        sources: 自身を指しているノードの集合。set()。デフォルトは空集合set()。
         x, y: ノードの座標(x,y)。ともにint()。デフォルトは-1。
         href: ノードのリンク。str()。デフォルトは空列 ""。
         is_dummy: ノードがダミーか否か。bool()。デフォルトはFalse。
     """
 
-    def __init__(self, name, target_nodes=None, source_nodes=None, x=None, y=None, href=None, is_dummy=None):
+    def __init__(self, name, targets=None, sources=None, x=None, y=None, href=None, is_dummy=None):
         self.name = name
-        self.target_nodes = set() if target_nodes is None else target_nodes
-        self.source_nodes = set() if source_nodes is None else source_nodes
+        self.targets = set() if targets is None else targets
+        self.sources = set() if sources is None else sources
         self.x = -1 if x is None else x
         self.y = -1 if y is None else y
         self.href = "" if href is None else href
@@ -34,11 +34,11 @@ class Node:
 
     def __str__(self):
         name = self.name
-        target_nodes = self.target_nodes
-        source_nodes = self.source_nodes
+        targets = self.targets
+        sources = self.sources
         x = self.x
         y = self.y
-        return f"name: {name}, target_nodes: {target_nodes}, source_nodes: {source_nodes}, (x, y)= ({x}, {y})"
+        return f"name: {name}, targetes: {targets}, sources: {sources}, (x, y)= ({x}, {y})"
 
 
 class Stack:
@@ -114,17 +114,17 @@ def create_node_list(input_node_dict):
         name2node[k] = n
         node_list.append(n)
 
-    # target_nodesの作成
+    # targetsの作成
     # k: ノードの名前(str)、v[0]: ノードkがターゲットとするノードの名前(str)の集合
     for k, v in input_node_dict.items():
         for target in v[0]:
-            name2node[k].target_nodes.add(name2node[target])
+            name2node[k].targets.add(name2node[target])
 
-    # source_nodesの作成
+    # sourcesの作成
     # k: ノードの名前(str)、v: ノードkのNodeオブジェクト(object)
     for k, v in name2node.items():
-        for target in v.target_nodes:
-            target.source_nodes.add(name2node[k])
+        for target in v.targets:
+            target.sources.add(name2node[k])
     return node_list
 
 
@@ -144,7 +144,7 @@ def assign_top_node(node_list):
     Return:
     """
     for top_node in node_list:
-        if not top_node.target_nodes:
+        if not top_node.targets:
             top_node.y = 0
             top_node.x = 0
             assign_level2node_recursively(node_list, top_node, 0)
@@ -154,7 +154,7 @@ def assign_level2node_recursively(node_list, target, target_level):
     """
     階層が1以上（y座標が1以上）のノードの階層を再帰的に決定する。階層の割当は次のルールに従う。
     ・まだ階層を割り当てていないノードならば、targetの1つ下の階層に割り当てる。そして、再帰する。
-    ・既に座標を割り当てており、その階層が今の階層(source_node_level)以上高い階層ならば、一つ下の階層に再割当する。
+    ・既に座標を割り当てており、その階層が今の階層(assign_node_level)以上高い階層ならば、一つ下の階層に再割当する。
 　　・既に階層を割り当てており、その階層が今の階層よりも低い階層ならば、何もしない。
 
     Args:
@@ -163,7 +163,7 @@ def assign_level2node_recursively(node_list, target, target_level):
         target_level: targetの階層。targetを指すノードは基本的にこの階層の1つ下の階層に割り当てられる。
     """
     assign_node_level = target_level + 1
-    for assign_node in target.source_nodes:
+    for assign_node in target.sources:
         if assign_node.x < 0:
             assign_node.y = assign_node_level
             assign_node.x = 0
@@ -172,7 +172,7 @@ def assign_level2node_recursively(node_list, target, target_level):
             assign_node.y = assign_node_level
 
 
-def assign_x_coordinate(node_list):
+def assign_x_sequentially(node_list):
     """
     全てのノードに対して、x座標を割り当てる。
 
@@ -203,7 +203,7 @@ def cut_edges_higher_than_1(node_list):
     """
     cut_edge_stack = Stack()
     for target in node_list:
-        for source in target.source_nodes:
+        for source in target.sources:
             if calc_edge_height(source, target) > 1:
                 cut_edge_stack.push((source, target))
 
@@ -242,8 +242,8 @@ def cut_edge(source, target):
         dummy: sourceとtargetの間に挿入したダミーノード。階層はsourceの一つ上にする。Nodeオブジェクト。
             属性は次のように設定する。
             name: "dummy1"(数字はインクリメントしていく)。
-            target_nodes: 要素がtargetのみの集合。
-            source_nodes: 要素がsourceのみの集合。
+            targets: 要素がtargetのみの集合。
+            sources: 要素がsourceのみの集合。
             x: 0
             y: source.y-1
             href: ""
@@ -251,89 +251,97 @@ def cut_edge(source, target):
     """
     assert calc_edge_height(source, target) > 1
     dummy_counter = cut_edge.count
-    source.target_nodes.remove(target)
-    target.source_nodes.remove(source)
+    source.targets.remove(target)
+    target.sources.remove(source)
     dummy = Node("dummy" + str(dummy_counter),
-                 target_nodes={target},
-                 source_nodes={source},
+                 targets={target},
+                 sources={source},
                  x=0,
                  y=source.y-1,
                  is_dummy=True
                  )
-    source.target_nodes.add(dummy)
-    target.source_nodes.add(dummy)
+    source.targets.add(dummy)
+    target.sources.add(dummy)
 
     return dummy
 
 
-def sort_nodes_by_barycenter_top_to_bottom(node_list):
+def sort_nodes_by_xcenter(all_nodes, downwards):
     """
     重心が小さいノードから左に配置する。
-    重心の計算はcalc_node_barycenter_at_targets()にて説明。
-    上の階層から下の階層へと操作を行う。
-
-    Args
-        node_list:全ノードをNodeクラスでまとめたリスト。
-
+    重心の計算はcalc_xcenter()にて説明。
+    上の階層から下の階層へ、もしくは下の階層から上の階層へと操作を行う。
+    Args:
+        all_nodes:全ノードをNodeオブジェクトでまとめたリスト。
+        downwards: Trueなら階層の上から下へ操作を行う。Falseなら階層の下から上へと操作を行う。
     Return:
     """
-    number_of_levels = max([node.y for node in node_list])
-    sort_level = 0
-    each_level_nodes = part_nodes_par_level(node_list)
-
-    while sort_level <= number_of_levels:
-        sort_level_nodes = each_level_nodes[sort_level]
-        # key: Nodeオブジェクト, value: keyのノードの重心
-        node_barycenter_dict = calc_node_barycenter_at_targets(sort_level_nodes)
-        # 辞書node_barycenter_dictをvalueの値(重心)が小さい順に並び変える。
-        barycenter_sorted = sorted(node_barycenter_dict.items(), key=lambda x: x[1])
-        sort_level_nodes = [node for node, barycenter in barycenter_sorted]
-        # 順にxを割り振る。
-        assign_x_coordinate(sort_level_nodes)
-        sort_level += 1
+    level2nodes = divide_nodes_by_level(all_nodes)
+    if downwards:
+        for level, nodes in sorted(level2nodes.items()):  # levelでループ
+            assign_x_by_xcenter(node2xcenter(nodes, from_targets=False))
+    else:
+        for level, nodes in sorted(level2nodes.items(), key=lambda k: -k[0]):
+            assign_x_by_xcenter(node2xcenter(nodes, from_targets=False))
 
 
-def part_nodes_par_level(node_list):
+def divide_nodes_by_level(nodes):
     """
     ノードを階層ごとにkeyで分け、辞書形式で返す。
-
     Args:
-        node_list:全ノードをNodeクラスでまとめたリスト。
-
+        nodes:全ノードをNodeオブジェクトでまとめたリスト。
     Return:
-        each_level_nodes: key: 階層, value: 階層がkeyのノードのリスト　となる辞書。
+        each_level_nodes: key=階層, value=階層がkeyのノードのリスト　となる辞書。
     """
-    each_level_nodes = {}
-    for node in node_list:
-        if node.y not in each_level_nodes:
-            each_level_nodes[node.y] = []
+    each_level_nodes = defaultdict(list)
+    for node in nodes:
         each_level_nodes[node.y].append(node)
     return each_level_nodes
 
 
-def calc_node_barycenter_at_targets(sort_level_nodes):
+def node2xcenter(nodes, from_targets):
     """
-    nodeの重心をターゲットから計算する
-    重心の計算
-        ターゲットが存在する場合：重心 = (ターゲットのx座標の総和) / (ターゲットの数)
-        ターゲットが存在しない場合：重心 = 1000
-
+    (v1, v2)のタプルのリストを作る。
+        v1=Nodeオブジェクト、v2=v1の重心の値(float)
     Args:
-        sort_level_nodes: ソートしたい階層のノードのリスト。
-
+        nodes:重心を求めたいNodeオブジェクトのリスト。Nodeオブジェクトの階層は等しいのが好ましい。
+        from_targets: True:重心をtargetsを用いて計算する, False:重心をsourceesを用いて計算する。
     Return:
-        barycenter_dict: key: Nodeオブジェクト, value: keyの重心
+         (v1, v2)となるタプルのリスト。
+            v1: Nodeオブジェクト
+            v2: 重心の値(float)
     """
-    barycenter_dict = {}
-    for node in sort_level_nodes:
-        barycenter_sum = 0.0
-        for target in node.target_nodes:
-            barycenter_sum += target.x
-        if not node.target_nodes:
-            barycenter_dict[node] = 1000
-        else:
-            barycenter_dict[node] = barycenter_sum / len(node.target_nodes)
-    return barycenter_dict
+    return [(node, calc_xcenter(node.targets if from_targets else node.sources)) for node in nodes]
+
+
+def calc_xcenter(nodes):
+    """
+    nodeの重心をターゲットもしくはソースの集合から計算する
+    重心の計算
+        ターゲット(もしくはソース)が存在する場合：
+            重心 = (ターゲット(ソース)のx座標の総和) / (ターゲット(ソース)の数)
+        ターゲット（もしくはソース）が存在しない場合：
+            重心 = 正の無限大, float('infinity')
+    Args:
+        nodes: ソートしたい階層のノードのリスト。
+    Return:
+        重心の値(float)
+    """
+    return sum([node.x for node in nodes]) / len(nodes) if len(nodes) > 0 else float('infinity')
+
+
+def assign_x_by_xcenter(node2xcenter_tuple):
+    """
+    タプル(v1, v2)のリストをソートし、それらに順にx座標を割り当てる。
+        v1: Nodeオブジェクト
+        v2: v1の重心の値(float)
+    Args:
+        node2xcenter_tuple: (v1, v2) のタプルのリスト(v1, v2は同上)
+    Return:
+    """
+    sorted_node2xcenter = sorted(node2xcenter_tuple, key=lambda tup: tup[1])  # 重心の値で昇順にソート
+    sorted_nodes = [node[0] for node in sorted_node2xcenter]
+    assign_x_sequentially(sorted_nodes)
 
 
 """
@@ -377,7 +385,7 @@ def create_dependency_graph(node_list, graph):
     """
     for source in node_list:
         graph.add_node(source.name)
-        for target in source.target_nodes:
+        for target in source.targets:
             graph.add_node(target.name)
             graph.add_edge(source.name, target.name)
 
@@ -432,10 +440,11 @@ def main():
 
     node_list = create_node_list(shuffle_dict(input_node_dict))
     assign_top_node(node_list)
-    assign_x_coordinate(node_list)
+    assign_x_sequentially(node_list)
     cut_edges_higher_than_1(node_list)
-    assign_x_coordinate(node_list)
-    sort_nodes_by_barycenter_top_to_bottom(node_list)
+    assign_x_sequentially(node_list)
+    sort_nodes_by_xcenter(node_list, downwards=True)
+    sort_nodes_by_xcenter(node_list, downwards=False)
 
     node_attributes = node_list2node_dict(node_list)
 
@@ -455,7 +464,7 @@ def main():
 
     with open('demo_sample.json', 'w') as f:
         f.write(json.dumps(graph_json))
-        
-        
+
+
 if __name__ == "__main__":
     main()
