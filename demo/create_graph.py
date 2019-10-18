@@ -266,18 +266,18 @@ def cut_edge(source, target):
     return dummy
 
 
-def sort_nodes_by_xcenter(all_nodes, downwards):
+def sort_nodes_by_xcenter(all_nodes, downward):
     """
     重心が小さいノードから左に配置する。
     重心の計算はcalc_xcenter()にて説明。
     上の階層から下の階層へ、もしくは下の階層から上の階層へと操作を行う。
     Args:
         all_nodes:全ノードをNodeオブジェクトでまとめたリスト。
-        downwards: Trueなら階層の上から下へ操作を行う。Falseなら階層の下から上へと操作を行う。
+        downward: Trueなら階層の上から下へ操作を行う。Falseなら階層の下から上へと操作を行う。
     Return:
     """
     level2nodes = divide_nodes_by_level(all_nodes)
-    if downwards:
+    if downward:
         for level, nodes in sorted(level2nodes.items()):  # levelでループ
             assign_x_by_xcenter(node2xcenter(nodes, from_targets=False))
     else:
@@ -305,13 +305,16 @@ def node2xcenter(nodes, from_targets):
         v1=Nodeオブジェクト、v2=v1の重心の値(float)
     Args:
         nodes:重心を求めたいNodeオブジェクトのリスト。Nodeオブジェクトの階層は等しいのが好ましい。
-        from_targets: True:重心をtargetsを用いて計算する, False:重心をsourceesを用いて計算する。
+        from_targets: True:重心をtargetsを用いて計算する, False:重心をsourcesを用いて計算する。
     Return:
          (v1, v2)となるタプルのリスト。
             v1: Nodeオブジェクト
             v2: 重心の値(float)
     """
-    return [(node, calc_xcenter(node.targets if from_targets else node.sources)) for node in nodes]
+    if from_targets:
+        return [(node, calc_xcenter(node.targets)) for node in nodes]
+    else:
+        return [(node, calc_xcenter(node.sources)) for node in nodes]
 
 
 def calc_xcenter(nodes):
@@ -327,7 +330,10 @@ def calc_xcenter(nodes):
     Return:
         重心の値(float)
     """
-    return sum([node.x for node in nodes]) / len(nodes) if len(nodes) > 0 else float('infinity')
+    if len(nodes) > 0:
+        return sum([node.x for node in nodes]) / len(nodes)
+    else:
+        return float('infinity')
 
 
 def assign_x_by_xcenter(node2xcenter_tuple):
@@ -443,8 +449,8 @@ def main():
     assign_x_sequentially(node_list)
     cut_edges_higher_than_1(node_list)
     assign_x_sequentially(node_list)
-    sort_nodes_by_xcenter(node_list, downwards=True)
-    sort_nodes_by_xcenter(node_list, downwards=False)
+    sort_nodes_by_xcenter(node_list, downward=True)
+    sort_nodes_by_xcenter(node_list, downward=False)
 
     node_attributes = node_list2node_dict(node_list)
 
