@@ -398,7 +398,7 @@ def make_edge(nodes):
     return edges
 
 
-def calc_sum_edge_length(all_nodes):
+def calc_edge_length_sum(all_nodes):
     """
     エッジの長さの総和を返す。
     ソースとターゲットの離れ具合を測る。
