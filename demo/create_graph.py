@@ -350,6 +350,12 @@ def assign_x_by_xcenter(node2xcenter_tuple):
     assign_x_sequentially(sorted_nodes)
 
 
+"""
+交差の計測
+エッジの総和の計測
+"""
+
+
 def count_cross(all_nodes):
     """
     交差数を階層ごとに上から下へと数える。
@@ -390,6 +396,24 @@ def make_edge(nodes):
         for source in node.sources:
             edges.append((source, node))
     return edges
+
+
+def calc_sum_edge_length(all_nodes):
+    """
+    エッジの長さの総和を返す。
+    ソースとターゲットの離れ具合を測る。
+    Args:
+        all_nodes: 総和を求めたいエッジを持つ全ノード。Nodeオブジェクト。
+    Return:
+        total_edge_length: 全エッジの長さの総和。float。
+    """
+    total_edge_length = 0.0
+    level2nodes = divide_nodes_by_level(all_nodes)
+    for level, nodes in sorted(level2nodes.items()):  # levelでループ
+        edges = make_edge(nodes)
+        for source, target in edges:
+            total_edge_length += math.sqrt(1 + pow(source.x - target.x, 2))
+    return total_edge_length
 
 
 """
