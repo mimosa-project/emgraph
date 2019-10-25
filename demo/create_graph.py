@@ -38,7 +38,7 @@ class Node:
         sources = self.sources
         x = self.x
         y = self.y
-        return f"name: {name}, targetes: {targets}, sources: {sources}, (x, y)= ({x}, {y})"
+        return f"name: {name}, targets: {targets}, sources: {sources}, (x, y)= ({x}, {y})"
 
 
 class Stack:
@@ -350,28 +350,70 @@ def assign_x_by_xcenter(node2xcenter_tuple):
     assign_x_sequentially(sorted_nodes)
 
 
+"""
+交差の計測
+エッジの総和の計測
+"""
+
+
 def count_cross(all_nodes):
     """
-    交差数を数える。
+    交差数を階層ごとに上から下へと数える。
     交差条件
-        2つのエッジ(s1, t1), (s2, t2)において
+        2つのエッジedge=(s1, t1), other_edge=(s2, t2)において
         ・s1とs2のy座標が等しい
         ・s1のx座標がs2のx座標より小さい
         ・t1のx座標がt2のx座標より大きい
     Args:
-        all_nodes:全てのノード
+        all_nodes:全てのノード。Nodeオブジェクトのリスト。
     Return:
         cross_counter: 交差数(int)
     """
-    all_edges = make_edge(all_nodes)
     cross_counter = 0
-    for edge in all_edges:
-        for other_edge in all_edges:
-            # edge[0]: sourceの座標, edge[1]: targetの座標,
-            # edge[0][0]: sourceのx座標. edge[0][1]: sourceのy座標
-            if edge[0][1] == other_edge[0][1] and edge[0][0] < other_edge[0][0] and edge[1][0] > other_edge[1][0]:
-                cross_counter += 1
+    level2nodes = divide_nodes_by_level(all_nodes)
+    for level, nodes in sorted(level2nodes.items()):
+        edges = make_edge(nodes)
+        for edge in edges:
+            for other_edge in edges:
+                # edge[0]: sourceノード, エッジのソース.  edge[1]: targetノード, エッジのターゲット.
+                if edge[0].y == other_edge[0].y and edge[0].x < other_edge[0].x and edge[1].x > other_edge[1].x:
+                    cross_counter += 1
     return cross_counter
+
+
+def make_edge(nodes):
+    """
+    グラフのエッジを取得する。ノードのソースを用いて作成する。
+    Args:
+        nodes: (ソースが存在する)全ノード
+    Return:
+        edges:エッジを(source, target)としてタプルで作成し、リストにまとめたもの。
+              source, targetはともにNodeオブジェクト。
+              edges = [(source1, target1), (source2, target2), ...]
+    """
+    edges = []
+    for node in nodes:
+        for source in node.sources:
+            edges.append((source, node))
+    return edges
+
+
+def calc_edge_length_sum(all_nodes):
+    """
+    エッジの長さの総和を返す。
+    ソースとターゲットの離れ具合を測る。
+    Args:
+        all_nodes: 総和を求めたいエッジを持つ全ノード。Nodeオブジェクト。
+    Return:
+        total_edge_length: 全エッジの長さの総和。float。
+    """
+    total_edge_length = 0.0
+    level2nodes = divide_nodes_by_level(all_nodes)
+    for level, nodes in sorted(level2nodes.items()):  # levelでループ
+        edges = make_edge(nodes)
+        for source, target in edges:
+            total_edge_length += math.sqrt(1 + pow(source.x - target.x, 2))
+    return total_edge_length
 
 
 """
