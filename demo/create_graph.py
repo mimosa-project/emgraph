@@ -8,7 +8,6 @@
 import networkx as nx
 import json
 from collections import defaultdict
-import math
 
 
 class Node:
@@ -130,53 +129,6 @@ def create_node_list(input_node_dict):
 
 
 """
-間引き
-"""
-
-
-def thin_edges(all_nodes):
-    """
-    エッジを間引く。
-    search_thinning_targets_recursively()で間引くエッジのターゲットの集合を取得し、それをもとに間引く。
-    Args:
-        all_nodes: 全ノード
-    Return:
-    """
-    for node in all_nodes:
-        thinning_targets = set()
-        search_thinning_targets_recursively(node, dict(), 1, thinning_targets)
-        for target in thinning_targets:
-            node.targets.remove(target)
-            target.sources.remove(node)
-
-
-def search_thinning_targets_recursively(node, visited_nodes, counter, thinning_targets):
-    """
-    間引くエッジのターゲットを見つけ、thinning_targetsにまとめる。
-    間引くエッジのターゲットは、参照先も参照しているターゲット。
-    Args:
-        node: targetsを見るノード。Nodeオブジェクト。
-        visited_nodes: 今まで訪問したことのあるノードの辞書。key=Nodeオブジェクト, value=counter。
-                ただし、value=0, value=1のkeyは次のノードを示す。
-                value=0: 間引くエッジのソース, value=1: value=0のノードのターゲット
-        counter: カウンタ。int。
-        thinning_targets: 間引くエッジのターゲットの集合。
-    Return:
-    """
-    for target in node.targets:
-        if target in visited_nodes.keys():
-            if visited_nodes[target] == 1:
-                thinning_targets.add(target)
-            else:
-                return None
-        else:
-            visited_nodes[target] = counter
-    for target in node.targets:
-        search_thinning_targets_recursively(target, visited_nodes, counter+1, thinning_targets)
-
-
-
-"""
 #1．階層割当(最長パス法)
 """
 
@@ -216,9 +168,8 @@ def assign_level2node_recursively(node_list, target, target_level):
             assign_node.y = assign_node_level
             assign_node.x = 0
             assign_level2node_recursively(node_list, assign_node, assign_node_level)
-        elif assign_node.y <= assign_node_level:
+        elif assign_node.x > -1 and assign_node.y <= assign_node_level:
             assign_node.y = assign_node_level
-            assign_level2node_recursively(node_list, assign_node, assign_node_level)
 
 
 def assign_x_sequentially(node_list):
@@ -555,12 +506,11 @@ def main():
                        "m": [{"i"}, "example.html"],
                        "n": [{"j", "m"}, "example.html"],
                        "o": [{"m", "l"}, "example.html"],
-                       "p": [{"n", "k", "b"}, "example.html"],
-                       "q": [{"k", "o", "i", "e"}, "example.html"],
+                       "p": [{"n", "k"}, "example.html"],
+                       "q": [{"k", "o", "i"}, "example.html"],
                        }
 
     node_list = create_node_list(shuffle_dict(input_node_dict))
-    thin_edges(node_list)
     assign_top_node(node_list)
     assign_x_sequentially(node_list)
     cut_edges_higher_than_1(node_list)
