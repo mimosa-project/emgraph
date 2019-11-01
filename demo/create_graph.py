@@ -129,6 +129,89 @@ def create_node_list(input_node_dict):
 
 
 """
+間引き
+"""
+
+
+def pluck_waste_edges(nodes):
+    """
+    エッジの間引きを行う。
+    各ノードのターゲットから、間引いてよいターゲットを見つけ、間引く。
+    Args:
+        nodes: 間引きを行いたいノード(1個以上)
+    Return:
+    """
+    node2ancestors = dict()  # key=node, value=keyの全祖先
+    for node in nodes:
+        make_node2ancestors_recursively(node, node2ancestors)
+        removable_edge_list = search_removable_edges(node, node2ancestors)
+        for source, target in removable_edge_list:
+            source.targets.remove(target)
+            target.sources.remove(source)
+
+
+def make_node2ancestors_recursively(node, node2ancestors):
+    """
+    key=node, value=keyの全祖先のノードのセット
+    となる辞書を作る。
+    Args:
+        node: 全祖先を知りたいノード
+        node2ancestors: key=ノード, value=keyの全祖先のセット
+    Return:
+        nodeにターゲットが存在しない：要素がnodeのみのセット
+        それ以外：nodeの全祖先のノードのセット
+    """
+    if not node.targets:
+        node2ancestors[node] = set()
+        return {node}
+
+    ancestors = set()
+    for target in node.targets:
+        ancestors = ancestors | {target}
+        if target in node2ancestors.keys():
+            ancestors = ancestors | node2ancestors[target]
+        else:
+            ancestors = ancestors | make_node2ancestors_recursively(target, node2ancestors)
+    node2ancestors[node] = ancestors
+    return ancestors
+
+
+def search_removable_edges(node, node2ancestors):
+    """
+    取り除いてもよいエッジを見つける。
+    Args:
+        node: 間引きたいノード(ソース側)。
+        node2ancestors: key=nodeのtarget, value=keyの全祖先のノードのセット の辞書。
+    Return:
+        thin_out_edge_list: 間引いてよいエッジ(source, target)のリスト。
+                            source,targetはともにNodeオブジェクト。
+    """
+    removable_edge_list = list()
+    # node2ancestorsの中からkeyがnode.targets内に存在するもののみ取ってくる。
+    target2ancestors = \
+        {target: ancestors for target, ancestors in node2ancestors.items() if target in node.targets}
+    target_route_union = make_union_by_dict_value(target2ancestors)
+    for target in node.targets:
+        if target in target_route_union:
+            removable_edge_list.append((node, target))
+    return removable_edge_list
+
+
+def make_union_by_dict_value(set_dict):
+    """
+    valueにセットを持つ辞書の和集合を作成する。
+    Args:
+        set_dict: セットを値に持つ辞書
+    Return:
+        set_union: set_dictの値の和集合
+    """
+    set_union = set()
+    for v in set_dict.values():
+        set_union = set_union | v
+    return set_union
+
+
+"""
 #1．階層割当(最長パス法)
 """
 
@@ -511,6 +594,7 @@ def main():
                        }
 
     node_list = create_node_list(shuffle_dict(input_node_dict))
+    pluck_waste_edges(node_list)
     assign_top_node(node_list)
     assign_x_sequentially(node_list)
     cut_edges_higher_than_1(node_list)
