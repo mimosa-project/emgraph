@@ -129,6 +129,77 @@ def create_node_list(input_node_dict):
 
 
 """
+間引き
+"""
+
+
+def remove_redundant_dependency(nodes):
+    """
+    エッジ(依存関係)の間引きを行う。
+    各ノードのターゲットから、間引いてよいターゲットを見つけ、間引く。
+    Args:
+        nodes: 間引きを行いたいノード(1個以上)
+    Return:
+    """
+    node2ancestors = dict()  # key=node, value=keyの全祖先
+    for node in nodes:
+        make_node2ancestors_recursively(node, node2ancestors)
+
+    for node in nodes:
+        removable_dependency_list = search_removable_dependency(node, node2ancestors)
+        for source, target in removable_dependency_list:
+            source.targets.remove(target)
+            target.sources.remove(source)
+
+
+def make_node2ancestors_recursively(node, node2ancestors):
+    """
+    key=node, value=keyの全祖先のノードのセット
+    となる辞書を作る。
+    Args:
+        node: 全祖先を知りたいノード
+        node2ancestors: key=ノード, value=keyの全祖先のセット
+    Return:
+        nodeにターゲットが存在しない：要素がnodeのみのセット
+        nodeがnode2ancestors.keys()に存在する:node2ancestors[node]
+        それ以外：nodeの全祖先のノードのセット
+    """
+    if node in node2ancestors:
+        return node2ancestors[node]
+
+    if not node.targets:
+        node2ancestors[node] = set()
+        return {node}
+
+    ancestors = set()
+    for target in node.targets:
+        ancestors |= {target}
+        ancestors |= make_node2ancestors_recursively(target, node2ancestors)
+    node2ancestors[node] = ancestors
+    return ancestors
+
+
+def search_removable_dependency(node, node2ancestors):
+    """
+    取り除いてもよいエッジ(依存関係)を見つける。
+    Args:
+        node: 間引きたいノード(ソース側)。
+        node2ancestors: key=nodeのtarget, value=keyの全祖先のノードのセット の辞書。
+    Return:
+        removable_dependency_list: 間引いてよいエッジ(source, target)のリスト。
+                                source,targetはともにNodeオブジェクト。
+    """
+    removable_dependency_list = list()
+    all_target_ancestors = set()
+    for target in node.targets:
+        all_target_ancestors |= node2ancestors[target]
+    for target in node.targets:
+        if target in all_target_ancestors:
+            removable_dependency_list.append((node, target))
+    return removable_dependency_list
+
+
+"""
 #1．階層割当(最長パス法)
 """
 
@@ -511,6 +582,7 @@ def main():
                        }
 
     node_list = create_node_list(shuffle_dict(input_node_dict))
+    remove_redundant_dependency(node_list)
     assign_top_node(node_list)
     assign_x_sequentially(node_list)
     cut_edges_higher_than_1(node_list)
