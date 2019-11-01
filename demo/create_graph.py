@@ -582,7 +582,7 @@ def main():
                        }
 
     node_list = create_node_list(shuffle_dict(input_node_dict))
-    pluck_waste_edges(node_list)
+    remove_redundant_dependency(node_list)
     assign_top_node(node_list)
     assign_x_sequentially(node_list)
     cut_edges_higher_than_1(node_list)
