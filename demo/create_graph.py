@@ -488,6 +488,41 @@ def calc_edge_length_sum(all_nodes):
 
 
 """
+#3. 座標決定
+"""
+
+
+def node2priority(nodes, from_targets):
+    """
+    優先度を各ノードに割り当てる。
+    優先度についてはcalc_priority()にて説明している。
+    Args:
+        nodes: 優先度を割り当てたいノード
+        from_targets: 優先度をターゲットから計算するかどうか。boolean
+    Return:
+        {node: priority}となる辞書。key=Nodeオブジェクト, value=keyの優先度
+    """
+    return {node: calc_priority(node, from_targets) for node in nodes}
+
+
+def calc_priority(node, from_targets):
+    """
+    ノードの優先度を返す
+    優先度の計算
+        ダミーノード：9999999999999999999999999999(大きい値)
+        その他：ソースまたはターゲットの個数
+    Args:
+        node: 優先度を計算したいノード
+        from_targets: ダミーノード以外において、Trueならtargetsから、Falseならsourcesから計算する。
+    Return:
+        計算結果　int
+    """
+    if node.is_dummy:
+        return 9999999999999999999999999999
+    return len(node.targets) if from_targets else len(node.sources)
+
+
+"""
 仕上げ
 """
 
