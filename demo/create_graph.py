@@ -522,6 +522,61 @@ def calc_priority(node, from_targets):
     return len(node.targets) if from_targets else len(node.sources)
 
 
+def node2idealx(nodes, from_target):
+    """
+    ノードにx座標の理想値を割り当てて、辞書で返す。
+    理想値の計算についてはcale_idealx()にて説明している。
+    Args:
+        nodes: x座標の理想値を知りたいノード
+        from_target: ターゲットから理想値を計算するかどうか。bool。
+    Return:
+        key=Nodeオブジェクト, value=keyのx座標の理想値 となる辞書
+    """
+    return {node: calc_idealx(node, from_target) for node in nodes}
+
+
+def calc_idealx(node, from_target):
+    """
+    ノードの理想のx座標を求める
+    理想のx座標の計算
+        (ターゲットから求める場合)
+        ターゲットがある場合: ターゲットのx座標の平均値
+        ない場合: ノードの元々のx座標
+        (ソースから求める場合)
+        ソースがある場合：ターゲットのx座標の平均値
+        ない場合：ノードの元々のx座標
+    Args:
+        node: x座標の理想値を知りたいノード
+        from_target: ターゲットから計算するかどうか。bool。
+    Return:
+        計算結果(int)
+    """
+    if from_target:
+        return int(sum([node.x for node in node.targets]) / len(node.targets)) if len(node.targets) else node.x
+    else:
+        return int(sum([node.x for node in node.sources]) / len(node.sources)) if len(node.sources) else node.x
+
+
+def upgrade_idealx(node2idealx_dict):
+    """
+    上から下への座標決定の際、ノードの理想値を今の座標とどちらがよいかを決める。
+         ソースの方が多い：今の座標
+         ターゲットの方が多い：理想値の座標(calc_idealx()の計算結果)
+         ソースとターゲットが同数：今の座標と理想値の座標の平均値
+    Args:
+        node2idealx_dict: key=Node, value=keyの理想のx座標値 となる辞書。
+    Return:
+    """
+    update_idealx_nodes = {}
+    for node, idealx in node2idealx_dict.items():
+        if len(node.targets) < len(node.sources):
+            update_idealx_nodes[node] = node.x
+        elif len(node.targets) == len(node.sources):
+            update_idealx_nodes[node] = int((node.x + idealx) / 2)
+    for node, idealx in update_idealx_nodes.items():
+        node2idealx_dict[node] = idealx
+
+
 """
 仕上げ
 """
