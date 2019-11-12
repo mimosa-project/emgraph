@@ -557,7 +557,7 @@ def calc_idealx(node, from_target):
         return int(sum([node.x for node in node.sources]) / len(node.sources)) if len(node.sources) else node.x
 
 
-def upgrade_idealx(node2idealx_dict):
+def update_idealx(node2idealx_dict):
     """
     上から下への座標決定の際、ノードの理想値を今の座標とどちらがよいかを決める。
          ソースの方が多い：今の座標
