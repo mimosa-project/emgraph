@@ -578,6 +578,57 @@ def update_idealx(node2idealx_dict):
         node2idealx_dict[node] = idealx
 
 
+def update_x2idealx(node, same_level_nodes, ideal_x, assigned_nodes, larger_idealx):
+    """
+    ノードのx座標を更新する。更新には優先度法を用いる。
+    ノードのx座標を+1(-1)ずつ更新していく。
+    Args:
+        node: x座標を更新したいノード
+        same_level_nodes: nodeと同じ階層のノード
+        ideal_x: nodeの理想のx座標値
+        assigned_nodes: 既に割り当てを行ったノードのスタック
+        larger_idealx: 理想x座標が今のx座標より大きいか否か
+    Return:
+    """
+    node_stack = Stack()
+    node_stack.push(node)
+    while node_stack.is_empty() is False:
+        update_x = node.x + 1 if larger_idealx else node.x - 1
+        exist = False  # 更新先にノードがあるかを見るフラグ
+        for other in same_level_nodes:
+            if other.x == update_x:  # 更新先にノードがあるかを調べる
+                exist = True
+                if other in assigned_nodes:
+                    assign_x_continuously(node_stack, node.x, not larger_idealx)
+                    break
+                else:
+                    node_stack.push(other)
+                    node = other
+                    ideal_x = ideal_x + 1 if larger_idealx else ideal_x - 1
+        if exist is False:
+            node.x = update_x
+        if node.x == ideal_x:
+            assign_x_continuously(node_stack, ideal_x, not larger_idealx)
+
+
+def assign_x_continuously(nodes_stack, x, increment):
+    """
+    nodes_stack内のノードを空になるまでポップして、順にx座標を割り当てる。
+    Args:
+        nodes_stack: ノードが入ったスタック
+        x: 最初popされるノードに割り当てるx座標の値
+        increment: Trueなら順に+1, Falseなら順に-1で割り当てていく。
+    Return:
+    """
+    while nodes_stack.is_empty() is False:
+        node = nodes_stack.pop()
+        node.x = x
+        if increment:
+            x += 1
+        else:
+            x -= 1
+
+
 """
 仕上げ
 """
