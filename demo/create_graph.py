@@ -578,55 +578,54 @@ def update_idealx(node2idealx_dict):
         node2idealx_dict[node] = idealx
 
 
-def update_x2idealx(node, same_level_nodes, ideal_x, assigned_nodes, larger_idealx):
+def update_x2idealx_recursively(node_index, same_level_nodes, ideal_x,  node_stack, assigned_nodes, sign):
     """
     ノードのx座標を更新する。更新には優先度法を用いる。
     ノードのx座標を+1(-1)ずつ更新していく。
     Args:
-        node: x座標を更新したいノード
+        node_index: x座標を更新したいノードのsame_level_nodesにおけるインデックス
         same_level_nodes: nodeと同じ階層のノード
         ideal_x: nodeの理想のx座標値
         assigned_nodes: 既に割り当てを行ったノードのスタック
-        larger_idealx: 理想x座標が今のx座標より大きいか否か
+        node_stack: 座標を更新するノードの入ったスタック。
+        sign: 理想x座標が今のx座標より大きいければ+1, 小さければ-1。
     Return:
     """
-    node_stack = Stack()
-    node_stack.push(node)
-    while node_stack.is_empty() is False:
-        update_x = node.x + 1 if larger_idealx else node.x - 1
-        exist = False  # 更新先にノードがあるかを見るフラグ
-        for other in same_level_nodes:
-            if other.x == update_x:  # 更新先にノードがあるかを調べる
-                exist = True
-                if other in assigned_nodes:
-                    assign_x_continuously(node_stack, node.x, not larger_idealx)
-                    break
-                else:
-                    node_stack.push(other)
-                    node = other
-                    ideal_x = ideal_x + 1 if larger_idealx else ideal_x - 1
-        if exist is False:
-            node.x = update_x
-        if node.x == ideal_x:
-            assign_x_continuously(node_stack, ideal_x, not larger_idealx)
+    # オーバーフローする時の処理
+    if (node_index == 0 and sign == -1) or (node_index == len(same_level_nodes)-1 and sign == 1):
+        assign_x_in_sequence(node_stack, ideal_x, -sign)
+        return
+
+    update_x = same_level_nodes[node_index].x + sign
+    if same_level_nodes[node_index+sign].x == update_x:
+        if same_level_nodes[node_index+sign] in assigned_nodes:
+            assign_x_in_sequence(node_stack, same_level_nodes[node_index].x, -sign)
+            return
+        else:
+            node_stack.push(same_level_nodes[node_index+sign])
+            node_index += sign
+            ideal_x += sign
+    else:
+        same_level_nodes[node_index].x = update_x
+    if same_level_nodes[node_index] == ideal_x:
+        assign_x_in_sequence(node_stack, ideal_x, -sign)
+    else:
+        update_x2idealx_recursively(node_index, same_level_nodes, ideal_x, node_stack, assigned_nodes, sign)
 
 
-def assign_x_continuously(nodes_stack, x, increment):
+def assign_x_in_sequence(nodes_stack, x, sign):
     """
     nodes_stack内のノードを空になるまでポップして、順にx座標を割り当てる。
     Args:
         nodes_stack: ノードが入ったスタック
         x: 最初popされるノードに割り当てるx座標の値
-        increment: Trueなら順に+1, Falseなら順に-1で割り当てていく。
+        sign: +1 or -1, +1: 順に増やしたい場合、-1: 順に減らしたい場合
     Return:
     """
     while nodes_stack.is_empty() is False:
         node = nodes_stack.pop()
         node.x = x
-        if increment:
-            x += 1
-        else:
-            x -= 1
+        x += sign
 
 
 """
