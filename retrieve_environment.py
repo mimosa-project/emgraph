@@ -1,9 +1,10 @@
 import os
 import glob
 from pathlib import Path
+MIZAR_LIBRARY_DIRECTORY_PATH = Path("mml")
 
 
-def make_library_dependence():
+def make_library_dependency():
     """
     各カテゴリ内で参照しているファイルを取得する。
     Args:
@@ -26,10 +27,12 @@ def make_library_dependence():
     for category in categories:
         miz_files_dict[category] = dict()
 
-    path = Path("mml")
-    os.chdir(path)
-    miz_files = glob.glob("*.miz")  # mmlディレクトリの.mizファイルを取り出す
+    cwd = os.getcwd()
+    try:
+        os.chdir(MIZAR_LIBRARY_DIRECTORY_PATH)
+        miz_files = glob.glob("*.miz")  # mmlディレクトリの.mizファイルを取り出す
 
-    os.chdir("../")
+    finally:
+        os.chdir(cwd)
 
     return miz_files_dict
