@@ -580,24 +580,35 @@ def update_idealx(node2idealx_dict):
 
 def update_x2idealx_recursively(node_index, same_level_nodes, ideal_x,  node_stack, assigned_nodes, sign):
     """
-    ノードのx座標を更新する。更新には優先度法を用いる。
-    ノードのx座標を+1(-1)ずつ更新していく。
+    ノードのx座標を更新する。
+    アルゴリズム
+        1．更新するノードが既に理想x座標にたどり着いていたら、node_stack内のノードを割り当てて走査終了
+        2．更新するノードがノード列の端に到達したら、node_stackに入ったノードを理想x座標まで動かし、割り当てて、走査終了
+        3．隣のインデックスのノードが更新するノードと隣り合っていた場合
+            3.1．その隣のノードが割当済みならば、そこでnode_stack内のノードを割り当てて走査終了
+            3.2．そうでなければ、node_stackにそのノードをプッシュして、更新するノードをそのノードにし、理想x座標を更新する
+        4．隣のインデックスのノードが更新するノードと隣り合っていなければ、ノードのx座標を更新する。
+        5．1から繰り返す
     Args:
         node_index: x座標を更新したいノードのsame_level_nodesにおけるインデックス
         same_level_nodes: nodeと同じ階層のノード
-        ideal_x: nodeの理想のx座標値
-        assigned_nodes: 既に割り当てを行ったノードのスタック
-        node_stack: 座標を更新するノードの入ったスタック。
+        ideal_x: same_level_nodes[node_index]の理想のx座標値
+        assigned_nodes: 既に割り当てを行った動かしたくないノードが入ったリスト
+        node_stack: 座標を更新している途中のノードが入ったスタック
         sign: 理想x座標が今のx座標より大きいければ+1, 小さければ-1。
     Return:
     """
-    # オーバーフローする時の処理
+    if same_level_nodes[node_index] == ideal_x:
+        assign_x_in_sequence(node_stack, ideal_x, -sign)
+        return
+
+    # ノード列の端に到達したら、node_stackに入ったノードを理想x座標まで動かし、割り当てて、走査終了
     if (node_index == 0 and sign == -1) or (node_index == len(same_level_nodes)-1 and sign == 1):
         assign_x_in_sequence(node_stack, ideal_x, -sign)
         return
 
-    update_x = same_level_nodes[node_index].x + sign
-    if same_level_nodes[node_index+sign].x == update_x:
+    next_x = same_level_nodes[node_index].x + sign
+    if same_level_nodes[node_index+sign].x == next_x:
         if same_level_nodes[node_index+sign] in assigned_nodes:
             assign_x_in_sequence(node_stack, same_level_nodes[node_index].x, -sign)
             return
@@ -606,11 +617,9 @@ def update_x2idealx_recursively(node_index, same_level_nodes, ideal_x,  node_sta
             node_index += sign
             ideal_x += sign
     else:
-        same_level_nodes[node_index].x = update_x
-    if same_level_nodes[node_index] == ideal_x:
-        assign_x_in_sequence(node_stack, ideal_x, -sign)
-    else:
-        update_x2idealx_recursively(node_index, same_level_nodes, ideal_x, node_stack, assigned_nodes, sign)
+        same_level_nodes[node_index].x = next_x
+
+    update_x2idealx_recursively(node_index, same_level_nodes, ideal_x, node_stack, assigned_nodes, sign)
 
 
 def assign_x_in_sequence(nodes_stack, x, sign):
