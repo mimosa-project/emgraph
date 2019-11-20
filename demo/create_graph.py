@@ -582,46 +582,45 @@ def update_x2idealx_recursively(node_index, same_level_nodes, ideal_x,  node_sta
     """
     ノードのx座標を更新する。
     アルゴリズム
-        1．更新するノードが既に理想x座標にたどり着いていたら、node_stack内のノードを割り当てて走査終了
-        2．更新するノードがノード列の端に到達したら、node_stackに入ったノードを理想x座標まで動かし、割り当てて、走査終了
-        3．隣のインデックスのノードが更新するノードと隣り合っていた場合
-            3.1．その隣のノードが割当済みならば、そこでnode_stack内のノードを割り当てて走査終了
-            3.2．そうでなければ、node_stackにそのノードをプッシュして、更新するノードをそのノードにし、理想x座標を更新する
-        4．隣のインデックスのノードが更新するノードと隣り合っていなければ、ノードのx座標を更新する。
-        5．1から繰り返す
+        1. 更新するノード(same_level_nodes[node_index])が、ノード列の端に到達していた場合、
+           node_stackに入ったノードを理想x座標まで動かし、割り当てて、走査終了
+        2. node_indexの隣のインデックスのノードを取得する
+        3. 2で取得したノードのx座標が理想x座標よりも遠い場所にあった場合
+            node_stackを理想x座標まで動かし、割り当てて、走査終了
+        4. 2で取得したノードのx座標が理想x座標よりも近い、あるいは一致していた場合
+            4.1 そのノードが割当済みノードならば、その1つ手前のx座標からnode_stack内のノードを並べる
+            4.2 そのノードが割当済みでなければ、node_stackにそのノードを追加、更新するノードをそのノードにし、
+                理想x座標を更新し、1に戻る。
     Args:
         node_index: x座標を更新したいノードのsame_level_nodesにおけるインデックス
-        same_level_nodes: nodeと同じ階層のノード
-        ideal_x: same_level_nodes[node_index]の理想のx座標値
-        assigned_nodes: 既に割り当てを行った動かしたくないノードが入ったリスト
-        node_stack: 座標を更新している途中のノードが入ったスタック
+        same_level_nodes: 操作を行う階層のノード
+        ideal_x: x座標を更新したいノードsame_level_nodes[node_index]の理想のx座標値
+        assigned_nodes: 既に割り当てを行った、動かしたくないノードのリスト
+        node_stack: 座標を更新している途中のノードが入ったスタック。
+                    初期値としてsame_level_nodes[node_index]をプッシュしておく必要がある。
         sign: 理想x座標が今のx座標より大きいければ+1, 小さければ-1。
     Return:
     """
-    if same_level_nodes[node_index] == ideal_x:
+    if (node_index == 0 and sign == -1) or (node_index == len(same_level_nodes) - 1 and sign == 1):
         assign_x_in_sequence(node_stack, ideal_x, -sign)
         return
 
-    # ノード列の端に到達したら、node_stackに入ったノードを理想x座標まで動かし、割り当てて、走査終了
-    if (node_index == 0 and sign == -1) or (node_index == len(same_level_nodes)-1 and sign == 1):
+    next_node = same_level_nodes[node_index+sign]
+
+    if (next_node.x > ideal_x and sign == 1) or (next_node.x < ideal_x and sign == -1):
         assign_x_in_sequence(node_stack, ideal_x, -sign)
         return
 
-    next_x = same_level_nodes[node_index].x + sign
-    if same_level_nodes[node_index+sign].x == next_x:
-        if same_level_nodes[node_index+sign] in assigned_nodes:
-            assign_x_in_sequence(node_stack, same_level_nodes[node_index].x, -sign)
-            return
+    else:
+        if next_node in assigned_nodes:
+            assign_x_in_sequence(node_stack, next_node.x-sign, -sign)
         else:
-            node_stack.push(same_level_nodes[node_index+sign])
+            node_stack.push(next_node)
             node_index += sign
             ideal_x += sign
-    else:
-        same_level_nodes[node_index].x = next_x
-
-    update_x2idealx_recursively(node_index, same_level_nodes, ideal_x, node_stack, assigned_nodes, sign)
-
-
+            update_x2idealx_recursively(node_index, same_level_nodes, ideal_x, node_stack, assigned_nodes, sign)
+            
+            
 def assign_x_in_sequence(nodes_stack, x, sign):
     """
     nodes_stack内のノードを空になるまでポップして、順にx座標を割り当てる。
