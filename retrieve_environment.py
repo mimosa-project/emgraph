@@ -31,8 +31,25 @@ def make_library_dependency():
     try:
         os.chdir(MIZAR_LIBRARY_DIRECTORY_PATH)
         miz_files = glob.glob("*.miz")  # mmlディレクトリの.mizファイルを取り出す
+        
+        category_dict = create_category_dict(categories)
 
     finally:
         os.chdir(cwd)
 
     return miz_files_dict
+
+
+def create_category_dict(categories):
+    """
+    環境部の各カテゴリー名をキーとし、空リストを値とする辞書の作成を行う。
+    key=カテゴリー名, value=list()
+    Args:
+        categories: 環境部のカテゴリー名をまとめたリスト
+    Return:
+        dict: {"vocabularies": list(), "constructors": list(), "notations": list(), ...}
+    """
+    category_dict = dict()
+    for category in categories:
+        category_dict[category] = list()
+    return category_dict
