@@ -578,6 +578,64 @@ def update_idealx(node2idealx_dict):
         node2idealx_dict[node] = idealx
 
 
+def update_x2idealx_recursively(node_index, same_level_nodes, ideal_x,  node_stack, assigned_nodes, sign):
+    """
+    ノードのx座標を更新する。
+    アルゴリズム
+        1. 更新するノード(same_level_nodes[node_index])が、ノード列の端に到達していた場合、
+           node_stackに入ったノードを理想x座標まで動かし、割り当てて、走査終了
+        2. node_indexの隣のインデックスのノードを取得する
+        3. 2で取得したノードのx座標が理想x座標よりも遠い場所にあった場合
+            node_stackを理想x座標まで動かし、割り当てて、走査終了
+        4. 2で取得したノードのx座標が理想x座標よりも近い、あるいは一致していた場合
+            4.1 そのノードが割当済みノードならば、その1つ手前のx座標からnode_stack内のノードを並べる
+            4.2 そのノードが割当済みでなければ、node_stackにそのノードを追加、更新するノードをそのノードにし、
+                理想x座標を更新し、1に戻る。
+    Args:
+        node_index: x座標を更新したいノードのsame_level_nodesにおけるインデックス
+        same_level_nodes: 操作を行う階層のノード
+        ideal_x: x座標を更新したいノードsame_level_nodes[node_index]の理想のx座標値
+        assigned_nodes: 既に割り当てを行った、動かしたくないノードのリスト
+        node_stack: 座標を更新している途中のノードが入ったスタック。
+                    初期値としてsame_level_nodes[node_index]をプッシュしておく必要がある。
+        sign: 理想x座標が今のx座標より大きいければ+1, 小さければ-1。
+    Return:
+    """
+    if (node_index == 0 and sign == -1) or (node_index == len(same_level_nodes) - 1 and sign == 1):
+        assign_x_in_sequence(node_stack, ideal_x, -sign)
+        return
+
+    next_node = same_level_nodes[node_index+sign]
+
+    if (next_node.x > ideal_x and sign == 1) or (next_node.x < ideal_x and sign == -1):
+        assign_x_in_sequence(node_stack, ideal_x, -sign)
+        return
+
+    else:
+        if next_node in assigned_nodes:
+            assign_x_in_sequence(node_stack, next_node.x-sign, -sign)
+        else:
+            node_stack.push(next_node)
+            node_index += sign
+            ideal_x += sign
+            update_x2idealx_recursively(node_index, same_level_nodes, ideal_x, node_stack, assigned_nodes, sign)
+            
+            
+def assign_x_in_sequence(nodes_stack, x, sign):
+    """
+    nodes_stack内のノードを空になるまでポップして、順にx座標を割り当てる。
+    Args:
+        nodes_stack: ノードが入ったスタック
+        x: 最初popされるノードに割り当てるx座標の値
+        sign: +1 or -1, +1: 順に増やしたい場合、-1: 順に減らしたい場合
+    Return:
+    """
+    while nodes_stack.is_empty() is False:
+        node = nodes_stack.pop()
+        node.x = x
+        x += sign
+
+
 """
 仕上げ
 """
