@@ -55,6 +55,20 @@ def create_category_dict(categories):
     return category_dict
 
 
+def create_flag_dict(categories):
+    """
+    環境部のカテゴリー名をキーとしたフラグ用の辞書の作成を行う
+    Args:
+        categories: 環境部のカテゴリー名
+    Return:
+        key=カテゴリー名, value=Falseとなる辞書
+    """
+    flag_dict = {}
+    for category in categories:
+        flag_dict[category] = False
+    return flag_dict
+
+
 def remove_comment(line):
     """
     与えられた文字列の"::"以降(右)を除去する
