@@ -53,3 +53,15 @@ def create_category_dict(categories):
     for category in categories:
         category_dict[category] = list()
     return category_dict
+
+
+def remove_comment(line):
+    """
+    与えられた文字列の"::"以降(右)を除去する
+    Args:
+        line: コメントを取り除きたい文字列
+    Return:
+        先頭がコメントだった場合(コメントのみの行だった場合): 空文字
+        それ以外: コメント部分を取り除いた文字列
+    """
+    return "" if line.index("::") == 0 else line.split("::")[0]
