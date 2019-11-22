@@ -64,8 +64,4 @@ def remove_comment(line):
         先頭がコメントだった場合(コメントのみの行だった場合): 空文字
         それ以外: コメント部分を取り除いた文字列
     """
-    if line.index("::") == 0:
-        return ""
-    else:
-        split_comment_line = line.split("::")
-        return split_comment_line[0]
+    return "" if line.index("::") == 0 else line.split("::")[0]
