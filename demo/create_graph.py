@@ -578,6 +578,31 @@ def update_idealx(node2idealx_dict):
         node2idealx_dict[node] = idealx
 
 
+def update_x_in_priority_order(nodes, node2priority_dict, node2idealx_dict):
+    """
+    1つの階層のノードのx座標の更新順序を決め、更新を行う。
+    順序は優先度(priority)が大きい順とする。優先度が同じ場合は、x座標の値が小さいほうが先になる。
+    更新は、update_x2idealx_recursively()にて行う。
+    アルゴリズム
+        1．与えられたnodesをx座標値で昇順にソートする
+        2．ノードのx座標値を優先度が高い順に更新していく。
+        3．更新したノードはその都度記録する。
+    Args:
+        nodes: 同階層のノードのリスト
+        node2priority_dict: key=Nodeオブジェクト, value=優先度 となっている辞書
+        node2idealx_dict: key=Nodeオブジェクト, value=理想のx座標値 となっている辞書
+    Return:
+    """
+    assigned_nodes = []
+    nodes = sorted(nodes, key=lambda a: a.x)
+    for node, priority in sorted(node2priority_dict.items(), key=lambda a: (-a[1], a[0].x)):
+        node_stack = Stack()
+        node_stack.push(node)
+        sign = 1 if node.x < node2idealx_dict[node] else -1
+        update_x2idealx_recursively(nodes.index(node), nodes, node2idealx_dict[node], node_stack, assigned_nodes, sign)
+        assigned_nodes.append(node)
+
+        
 def update_x2idealx_recursively(node_index, same_level_nodes, ideal_x,  node_stack, assigned_nodes, sign):
     """
     ノードのx座標を更新する。
