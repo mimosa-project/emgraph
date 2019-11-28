@@ -55,6 +55,21 @@ def create_category_dict(categories):
     return category_dict
 
 
+def create_category2bool(categories):
+    """
+    キーが環境部のカテゴリー名、値が真偽値(bool)となる辞書の作成を行う。
+    ただし、値の初期値はFalseとする。
+    Args:
+        categories: 環境部のカテゴリー名(vocabularies等)をまとめたリスト
+    Return:
+        dict: {"vocabularies": False, "constructors": False, "notations": False, ...}
+    """
+    flag_dict = {}
+    for category in categories:
+        flag_dict[category] = False
+    return flag_dict
+
+
 def remove_comment(line):
     """
     与えられた文字列の"::"以降(右)を除去する
