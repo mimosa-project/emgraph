@@ -493,6 +493,27 @@ def calc_edge_length_sum(all_nodes):
 """
 
 
+def move_node_closer_to_connected_nodes(all_nodes, downward):
+    """
+    ノードのx座標をターゲットもしくはソースに近づくように更新する。
+    更新は上の階層から下の階層へ、もしくは下の階層から上の階層へと各階層ごとに行う。
+    更新のために、優先順位や理想x座標を求め、更新は
+    update_x_in_priority_order(), update_x2idealx_recursively()
+    にて行う。
+    Args:
+        all_nodes: 全てのノード
+        downward: 上の階層から下の階層へ行うかどうか。
+                Trueなら上の階層から下の階層へ、Falseなら下の階層から上の階層へと座標更新を行う。
+    Return:
+    """
+    level2nodes = divide_nodes_by_level(all_nodes)
+    key = lambda k: k[0] if downward else -k[0]  # 処理の順(上の階層からか、下の階層からか)を設定する
+    for level, nodes in sorted(level2nodes.items(), key=key):
+        node2priority_dict = node2priority(nodes, downward)
+        node2idealx_dict = node2idealx(nodes, downward)
+        update_x_in_priority_order(nodes, node2priority_dict, node2idealx_dict)
+
+
 def node2priority(nodes, from_targets):
     """
     優先度を各ノードに割り当てる。
