@@ -493,7 +493,7 @@ def calc_edge_length_sum(all_nodes):
 """
 
 
-def update_node_x2near_the_neighborhood(all_nodes, downward):
+def move_node_closer_to_connected_nodes(all_nodes, downward):
     """
     ノードのx座標をターゲットもしくはソースに近づくように更新する。
     更新は上の階層から下の階層へ、もしくは下の階層から上の階層へと各階層ごとに行う。
