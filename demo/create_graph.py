@@ -505,17 +505,18 @@ def retrieve_nodes_connected_by_dummy(all_nodes):
     Args:
         all_nodes: 全ノードのリスト
     Return:
-        edge_list: ダミーノードで接続されていた正規のノードのペアのリスト
+        pair_of_nodes: ダミーノードで接続されていた正規のノードのペアのリスト
     """
     pair_of_nodes = []
     level2nodes = divide_nodes_by_level(all_nodes)
     for level, nodes in sorted(level2nodes.items()):  # 上の階層から下の階層へと探索する
         for node in nodes:
+            if node.is_dummy is True:
+                continue
             for source in node.sources:
-                if source.is_dummy is True and node.is_dummy is False:
+                if source.is_dummy is True:
                     while source.is_dummy is True:
-                        source = source.sources.pop()
-                        source.sources.add(source)
+                        source = list(source.sources)[0]
                     pair_of_nodes.append((source, node))
     return pair_of_nodes
 
