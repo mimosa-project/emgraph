@@ -489,6 +489,39 @@ def calc_edge_length_sum(all_nodes):
 
 
 """
+ダミーノードの削除
+"""
+
+
+def retrieve_nodes_connected_by_dummy(all_nodes):
+    """
+    ダミーノードで接続されていた正規のノード(is_dummyがFalseのノード)のペアを取得する。
+    アルゴリズム
+        1. ノードを上の階層から順にみていく。
+            1.1. 正規のノードのソースを見て、その中にダミーがあるかを見る
+                1.1.1 もしダミーノードがあれば、正規のノードが見つかるまでソースを辿っていく。
+                1.1.2 正規のノードに辿り着いたら、辿り始めたノードと辿り着いたノードをタプルにしてリストに追加する。
+                      このリストが取得したいノードのペアのリストとなる。
+    Args:
+        all_nodes: 全ノードのリスト
+    Return:
+        pair_of_nodes: ダミーノードで接続されていた正規のノードのペアのリスト
+    """
+    pair_of_nodes = []
+    level2nodes = divide_nodes_by_level(all_nodes)
+    for level, nodes in sorted(level2nodes.items()):  # 上の階層から下の階層へと探索する
+        for node in nodes:
+            if node.is_dummy is True:
+                continue
+            for source in node.sources:
+                if source.is_dummy is True:
+                    while source.is_dummy is True:
+                        source = list(source.sources)[0]
+                    pair_of_nodes.append((source, node))
+    return pair_of_nodes
+
+
+"""
 #3. 座標決定
 """
 
