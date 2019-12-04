@@ -74,6 +74,24 @@ $(function(){
 
 
 /**
+ * グラフの要素のスタイルを初期状態(ノード：赤い丸、エッジ：黒矢印)に戻す。
+ * ただし、移動したノードの位置は戻らない。
+ * @param {cytoscape object} cy cytoscapeのグラフ本体
+ * @return
+**/
+function reset_elements_style(cy) {
+    cy.elements().removeClass("highlight");
+    cy.elements().removeClass("selected");
+    for(let i=0; i<10; i++){
+        cy.elements().removeClass("selected_ancestors" + i);
+        cy.elements().removeClass("selected_descendants" + i);
+    }
+    cy.elements().removeClass("not_highlight");
+    cy.nodes().unlock();
+}
+
+
+/**
  * 選んだ1つのノードに近づく、焦点を当てる。
  * @param {cytoscape object} cy: cytoscapeグラフ本体
  * @param {cytoscape object} selected_node: cyの単一のノード。近づきたいノード。
