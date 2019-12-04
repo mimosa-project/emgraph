@@ -80,13 +80,12 @@ $(function(){
  * @return
 **/
 function reset_elements_style(cy) {
-    cy.elements().removeClass("highlight");
-    cy.elements().removeClass("selected");
+    let all_class_name = ["highlight",  "not_highlight",  "selected"];
     for(let i=0; i<10; i++){
-        cy.elements().removeClass("selected_ancestors" + i);
-        cy.elements().removeClass("selected_descendants" + i);
+        all_class_name.push("selected_ancestors" + i);
+        all_class_name.push("selected_descendants" + i);
     }
-    cy.elements().removeClass("not_highlight");
+    cy.elements().removeClass(all_class_name);
     cy.nodes().unlock();
 }
 
