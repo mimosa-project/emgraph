@@ -46,7 +46,6 @@ $(function(){
         }
         // グラフのスタイルを決定
         cy.style([
-            /* 初期状態におけるグラフの要素のスタイル */
             {
                 selector: "node",
                 css: {"background-color": "red", "shape": "ellipse", "width": 100, "height": 100,
@@ -60,29 +59,6 @@ $(function(){
                 css: {"line-color": "black", "target-arrow-shape": "triangle", "curve-style": "straight",
                 "target-arrow-color": "black", "arrow-scale": 3, "width": 5, "opacity": 0.2, "z-index": 1}
             },
-            /* ノードが左クリックされたときに適応されるスタイル */
-            // 選択されたノード全てのスタイル
-            {
-                selector: "node.highlight",
-                css: {"font-size": 50,  "width": 170, "height": 170,
-                "content": "data(name)", "opacity": 1, "z-index": 10}
-            },
-            // 選択(左クリック)されたノードのスタイル
-            {
-                selector: "node.selected",
-                css: {"background-color": "#ff0000", "width": 200, "height": 200}
-            },
-            // 強調表示されたノードをつなぐエッジのスタイル
-            {
-                selector: "edge.highlight",
-                css: {"line-color": "#006400", "curve-style": "straight",
-                "target-arrow-color": "#006400", "arrow-scale": 3, "width": 3, "opacity": 1, "z-index": 20}
-            },
-            // クリックされていないノードとエッジのスタイル
-            {
-                selector: ".not_highlight",
-                css: {"opacity": 0.05, "z-index": 0}
-            }
         ]);
         // ノードをクリックした場合、リンクに飛ぶ(htmlリンクの設定)
         cy.on("tap", "node", function(){
