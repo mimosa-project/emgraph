@@ -48,16 +48,16 @@ $(function(){
         cy.style([
             {
                 selector: "node",
-                css: {"background-color": "red", "width": 50, "height": 50, "content": "data(id)"}
-            },
-            {
-                selector:"label",
-                css: {"text-halign":"center", "text-valign": "center"}
+                css: {"background-color": "red", "shape": "ellipse", "width": 100, "height": 100,
+                      "content": "data(name)", "font-size": 30, "opacity": 0.8, "z-index": 1,
+                      "text-halign":"center", "text-valign": "center", "font-style": "normal",
+                      "font-weight": "bold",
+                      "z-index": 1}
             },
             {
                 selector: "edge",
                 css: {"line-color": "black", "target-arrow-shape": "triangle", "curve-style": "straight",
-                "target-arrow-color": "black", "arrow-scale": 3, "width": 3}
+                "target-arrow-color": "black", "arrow-scale": 3, "width": 5, "opacity": 0.2, "z-index": 1}
             },
         ]);
         // ノードをクリックした場合、リンクに飛ぶ(htmlリンクの設定)
