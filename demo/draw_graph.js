@@ -84,6 +84,22 @@ $(function(){
                 css: {"opacity": 0.05, "z-index": 0}
             }
         ]);
+        
+        
+        // 強調表示する祖先、子孫の世代数の初期化
+        let ancestor_generations = 1
+        let descendant_generations = 1
+        
+        
+        // 強調表示したい祖先、子孫の世代数を取得
+        $("#ancestor_generations").on("change", function(){
+            ancestor_generations = $("#ancestor_generations").val();
+        });
+        $("#descendant_generations").on("change", function(){
+            descendant_generations = $("#descendant_generations").val();
+        });
+        
+        
         // ノードをクリックした場合、リンクに飛ぶ(htmlリンクの設定)
         cy.on("tap", "node", function(){
             try {
