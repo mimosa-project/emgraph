@@ -72,6 +72,47 @@ $(function(){
                 selector: "node.selected",
                 css: {"background-color": "#ff0000", "width": 200, "height": 200}
             },
+            // 選択された(強調表示する)祖先のスタイル
+            {
+                selector: "node.selected_ancestors0",
+                css: {"background-color": "#ff00ff"}
+            },
+            {
+                selector: "node.selected_ancestors1",
+                css: {"background-color": "#dd00ff"}
+            },
+            {
+                selector: "node.selected_ancestors2",
+                css: {"background-color": "#bb00ff"}
+            },
+            {
+                selector: "node.selected_ancestors3",
+                css: {"background-color": "#9900ff"}
+            },
+            {
+                selector: "node.selected_ancestors4",
+                css: {"background-color": "#7700ff", "color": "#aaaaaa"}
+            },
+            {
+                selector: "node.selected_ancestors5",
+                css: {"background-color": "#5500ff", "color": "#aaaaaa"}
+            },
+            {
+                selector: "node.selected_ancestors6",
+                css: {"background-color": "#2f00ff", "color": "#aaaaaa"}
+            },
+            {
+                selector: "node.selected_ancestors7",
+                css: {"background-color": "#0000ff", "color": "#aaaaaa"}
+            },
+            {
+                selector: "node.selected_ancestors8",
+                css: {"background-color": "#0000dd", "color": "#aaaaaa"}
+            },
+            {
+                selector: "node.selected_ancestors9",
+                css: {"background-color": "#0000bb", "color": "#aaaaaa"}
+            },
             // 強調表示されたノードをつなぐエッジのスタイル
             {
                 selector: "edge.highlight",
