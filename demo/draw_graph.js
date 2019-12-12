@@ -113,6 +113,47 @@ $(function(){
                 selector: "node.selected_ancestors9",
                 css: {"background-color": "#0000bb", "color": "#aaaaaa"}
             },
+            // 選択された(強調表示する)子孫のスタイル
+            {
+                selector: "node.selected_descendants0",
+                css: {"background-color": "#ffff00"}
+            },
+            {
+                selector: "node.selected_descendants1",
+                css: {"background-color": "#ddff00"}
+            },
+            {
+                selector: "node.selected_descendants2",
+                css: {"background-color": "#bbff00"}
+            },
+            {
+                selector: "node.selected_descendants3",
+                css: {"background-color": "#99ff00"}
+            },
+            {
+                selector: "node.selected_descendants4",
+                css: {"background-color": "#77ff00"}
+            },
+            {
+                selector: "node.selected_descendants5",
+                css: {"background-color": "#44ff00"}
+            },
+            {
+                selector: "node.selected_descendants6",
+                css: {"background-color": "#00ff00"}
+            },
+            {
+                selector: "node.selected_descendants7",
+                css: {"background-color": "#00ff44"}
+            },
+            {
+                selector: "node.selected_descendants8",
+                css: {"background-color": "#00ff77"}
+            },
+            {
+                selector: "node.selected_descendants9",
+                css: {"background-color": "#00ff99"}
+            },
             // 強調表示されたノードをつなぐエッジのスタイル
             {
                 selector: "edge.highlight",
