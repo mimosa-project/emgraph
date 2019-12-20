@@ -173,6 +173,19 @@ $(function(){
         let descendant_generations = 1
         
         
+        /* 検索機能の追加 */
+        // 全ノード(article)名の取得
+        let all_article_name = [];
+        cy.nodes("[!is_dummy]").forEach(function(node){
+            all_article_name.push(node.data("name"));
+        });
+        all_article_name.sort();
+        // datalistに全ノード名を追加
+        for (let article_name of all_article_name){
+            $("#article_list").append($("<option/>").val(article_name).html(article_name));
+        }
+        
+        
         // 強調表示したい祖先、子孫の世代数を取得
         $("#ancestor_generations").on("change", function(){
             ancestor_generations = $("#ancestor_generations").val();
