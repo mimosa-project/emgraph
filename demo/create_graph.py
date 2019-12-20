@@ -242,6 +242,7 @@ def assign_level2node_recursively(node_list, target, target_level):
             assign_level2node_recursively(node_list, assign_node, assign_node_level)
         elif assign_node.x > -1 and assign_node.y <= assign_node_level:
             assign_node.y = assign_node_level
+            assign_level2node_recursively(node_list, assign_node, assign_node_level)
 
 
 def assign_x_sequentially(node_list):
