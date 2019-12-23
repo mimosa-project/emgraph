@@ -175,13 +175,13 @@ $(function(){
         
         /* 検索機能の追加 */
         // 全ノード(article)名の取得
-        let all_article_name = [];
+        let all_article_names = [];
         cy.nodes("[!is_dummy]").forEach(function(node){
-            all_article_name.push(node.data("name"));
+            all_article_names.push(node.data("name"));
         });
-        all_article_name.sort();
+        all_article_names.sort();
         // datalistに全ノード名を追加
-        for (let article_name of all_article_name){
+        for (let article_name of all_article_names){
             $("#article_list").append($("<option/>").val(article_name).html(article_name));
         }
         
