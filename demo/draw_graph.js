@@ -276,3 +276,14 @@ function highlight_connected_elements(cy, generations, select_node, is_ancestor)
     }
 }
 
+
+/**
+ * 強調表示されていない(highlightクラスに属していない)ノードとエッジをnot_highlightクラスに入れ、目立たなく(薄く表示)する。
+ * @param {cytoscape object} cy cytoscapeグラフ本体
+ * @return
+**/
+function fade_out_not_highlight_elements(cy){
+    let other = cy.elements();
+    other = other.difference(cy.elements(".highlight"));
+    cy.$(other).addClass("not_highlight");
+}
