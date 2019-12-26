@@ -162,7 +162,7 @@ $(function(){
             },
             // 選択されていないノードとエッジのスタイル
             {
-                selector: ".not_highlight",
+                selector: ".faded",
                 css: {"opacity": 0.05, "z-index": 0}
             }
         ]);
@@ -215,7 +215,7 @@ $(function(){
  * @return
 **/
 function reset_elements_style(cy) {
-    let all_class_names = ["highlight",  "not_highlight",  "selected"];
+    let all_class_names = ["highlight",  "faded",  "selected"];
     for(let i=0; i<10; i++){
         all_class_names.push("selected_ancestors" + i);
         all_class_names.push("selected_descendants" + i);
@@ -276,3 +276,14 @@ function highlight_connected_elements(cy, generations, select_node, is_ancestor)
     }
 }
 
+
+/**
+ * 強調表示されていない(highlightクラスに属していない)ノードとエッジをfadedクラスに入れ、目立たなく(薄く表示)する。
+ * @param {cytoscape object} cy cytoscapeグラフ本体
+ * @return
+**/
+function fade_not_highlight_elements(cy){
+    let other = cy.elements();
+    other = other.difference(cy.elements(".highlight"));
+    cy.$(other).addClass("faded");
+}
