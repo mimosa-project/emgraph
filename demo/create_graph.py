@@ -522,6 +522,20 @@ def retrieve_nodes_connected_by_dummy(all_nodes):
     return pair_of_nodes
 
 
+def add_edges(edges):
+    """
+    エッジを受け取り、対応するNodeオブジェクトのsources, targetsに追加する。
+    入力は(source, target)のタプルにしておく（source, targetはNodeオブジェクト）。
+    追加したいエッジが複数ある場合は、リストにまとめておく。
+    Args:
+        edges: 追加したいエッジのタプル(source, target)が格納されたリスト
+    Return:
+    """
+    for edge in edges:
+        edge[0].targets.add(edge[1])  # edge[0]: エッジのsource, edge[1]: エッジのtarget
+        edge[1].sources.add(edge[0])
+
+
 """
 #3. 座標決定
 """
