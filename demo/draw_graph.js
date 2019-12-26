@@ -184,7 +184,24 @@ $(function(){
         for (let article_name of all_article_names){
             $("#article_list").append($("<option/>").val(article_name).html(article_name));
         }
-        
+        // searchボタンをクリックしたら検索開始
+        $("#search").click(function() {
+            // dropdownで選択したノード名、または記述したノード名を取得
+            let select_node_name = $("#article_name").val();
+            let select_node = cy.nodes().filter(function(ele){
+                return ele.data("name") == select_node_name;
+            });
+            // ノードが存在するか確認し、あればそのノードに移動＆強調。無ければ、アラート表示。
+            if(select_node.data("name")){
+                reset_elements_style(cy);
+                cy.$(select_node).addClass("selected");
+                highlight_select_elements(cy, select_node, ancestor_generations, descendant_generations);
+                $("#select_article").text("SELECT: " + select_node_name);
+            }
+            else{
+                alert("ERROR: Don't have '" + select_node_name + "' node. Please select existed nodes.");
+            }
+        });
         
         // 強調表示したい祖先、子孫の世代数を取得
         $("#ancestor_generations").on("change", function(){
