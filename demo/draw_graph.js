@@ -191,7 +191,7 @@ $(function(){
             let select_node = cy.nodes().filter(function(ele){
                 return ele.data("name") == select_node_name;
             });
-            // ノードが存在するか確認し、あればそのノードに移動＆強調。無ければ、アラート表示。
+            // ノードが存在するか確認し、あればそのノードに移動＆強調。無ければ、アラートでエラーメッセージを表示。
             if(select_node.data("name")){
                 reset_elements_style(cy);
                 cy.$(select_node).addClass("selected");
