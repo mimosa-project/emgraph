@@ -54,19 +54,18 @@ def create_key2list(keys):
     return key2list
 
 
-def create_category2bool(categories):
+def create_key2False(keys):
     """
-    キーが環境部のカテゴリー名、値が真偽値(bool)となる辞書の作成を行う。
-    ただし、値の初期値はFalseとする。
+    keyがkeys，valueがFalseの辞書を作成する．
     Args:
-        categories: 環境部のカテゴリー名(vocabularies等)をまとめたリスト
-    Return:
-        dict: {"vocabularies": False, "constructors": False, "notations": False, ...}
+        keys: keyに設定したい値(リスト)
+    return:
+        key2false: keyがkeys，valueがFalseの辞書
     """
-    flag_dict = {}
-    for category in categories:
-        flag_dict[category] = False
-    return flag_dict
+    key2false = dict()
+    for k in keys:
+        key2false[k] = False
+    return key2false
 
 
 def remove_comment(line):
