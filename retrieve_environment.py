@@ -32,7 +32,7 @@ def make_library_dependency():
         os.chdir(MIZAR_LIBRARY_DIRECTORY_PATH)
         miz_files = glob.glob("*.miz")  # mmlディレクトリの.mizファイルを取り出す
         
-        category_dict = create_category2list(categories)
+        category_dict = create_key2list(categories)
 
     finally:
         os.chdir(cwd)
@@ -40,16 +40,18 @@ def make_library_dependency():
     return miz_files_dict
 
 
-def create_category2list(categories):
+def create_key2list(keys):
     """
-    環境部の各カテゴリー名をキーとし、空リストを値とする辞書の作成を行う。
-    key=カテゴリー名, value=list()
+    keyがkeys，valueがlist()の辞書を作成する．
     Args:
-        categories: 環境部のカテゴリー名をまとめたリスト
-    Return:
-        dict: {"vocabularies": list(), "constructors": list(), "notations": list(), ...}
+        keys: keyに設定したい値(リスト)
+    return:
+        key2list: keyがkeys，valueがlist()の辞書
     """
-    return dict.fromkeys(categories, list())
+    key2list = dict()
+    for i in keys:
+        key2list[i] = list()
+    return key2list
 
 
 def create_category2bool(categories):
