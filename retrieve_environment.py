@@ -78,3 +78,18 @@ def remove_comment(line):
         それ以外: コメント部分を取り除いた文字列
     """
     return "" if line.index("::") == 0 else line.split("::")[0]
+
+
+def switch_to_true_only_select_key(key2bool, select_key):
+    """
+    選択したkeyのvalueをTrueに，それ以外のkeyのvalueをFalseにする．
+    Args:
+        key2bool: 全てのvalueがbool値になっている辞書
+        select_key: valueをTrueにしたいkey2bool内の1つのkey
+    Return:
+        key2bool: key=select_keyのvalueをTrue、その他のkeyのvalueをFalseにした辞書
+    """
+    for k in key2bool:
+        key2bool[k] = False
+    key2bool[select_key] = True
+    return key2bool
