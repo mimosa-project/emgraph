@@ -40,6 +40,50 @@ def make_library_dependency():
     return miz_files_dict
 
 
+def retrieve_reference_articles_for_each_category(file_lines, categories):
+    """
+    カテゴリーごとに参照しているarticleを取得する。
+    アルゴリズム
+        1. 取得したファイル文字列リストに対して次の処理を行う．
+            1.1. 両端の空白を取り除く．
+            1.2．コメントがあれば取り除く．
+            1.3．本体部に入ったらループ(ファイルの取得)を抜ける．
+            1.4．文字列内にカテゴリー名があるか調べる．
+                あれば、exist_categoryに記録する．
+            1.5．exist_categoryに記録があれば、今見ている行を保存する．
+        2．1.5で得たリストから要素内に存在するカテゴリー名を取り除く．
+    Args:
+        file_lines:ファイルの文字列を1行ずつリストに格納したもの
+        categories: 環境部の項目名
+    Return:
+        category2dependency_articles:
+                key=カテゴリー名, value=keyで参照しているarticleのリスト
+    """
+    exist_category = create_key2False(categories)
+    category2dependency_articles = create_key2list(categories)
+    for line in file_lines:
+        line = line.strip(" ")  # 両端の空白は除去
+        if "::" in line:  # コメントの処理
+            line = remove_comments(line)
+        if 'begin' in line:  # 本体部に入ったら終わり
+            break
+        else:
+            for category in categories:
+                if category in line:  # 環境部に入った場合、どのカテゴリに入ったかを保存する。
+                    exist_category = switch_to_true_only_select_key(exist_category, category)
+
+        for category, exist in exist_category.items():
+            if exist:
+                # article名，カテゴリ名を保存する．
+                category2dependency_articles[category] += re.findall(r'(\w+)', line)
+
+    for category, dependency_articles in category2dependency_articles.items():
+        while category in dependency_articles:
+            dependency_articles.remove(category)
+
+    return category2dependency_articles
+
+
 def create_key2list(keys):
     """
     keyがkeys，valueがlist()の辞書を作成する．
