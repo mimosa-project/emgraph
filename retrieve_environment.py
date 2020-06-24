@@ -40,48 +40,60 @@ def make_library_dependency():
     return miz_files_dict
 
 
-def retrieve_reference_articles_for_each_category(file_lines, categories):
+def extract_articles(contents):
     """
-    カテゴリーごとに参照しているarticleを取得する。
-    アルゴリズム
-        1. 取得したファイル文字列リストに対して次の処理を行う．
-            1.1. 両端の空白を取り除く．
-            1.2．コメントがあれば取り除く．
-            1.3．本体部に入ったらループ(ファイルの取得)を抜ける．
-            1.4．文字列内にカテゴリー名があるか調べる．
-                あれば、exist_categoryに記録する．
-            1.5．exist_categoryに記録があれば、今見ている行を保存する．
-        2．1.5で得たリストから要素内に存在するカテゴリー名を取り除く．
+    mizファイルが環境部(environ~begin)で参照しているarticleを
+    各カテゴリごとに取得する。
     Args:
-        file_lines:ファイルの文字列を1行ずつリストに格納したもの
-        categories: 環境部の項目名
-    Return:
-        category2dependency_articles:
-                key=カテゴリー名, value=keyで参照しているarticleのリスト
+        contents: mizファイルのテキスト(内容)
+    Retrun:
+        category2articles: keyがカテゴリ名、valueが参照しているarticleのリスト
     """
-    exist_category = create_key2False(categories)
-    category2dependency_articles = create_key2list(categories)
-    for line in file_lines:
-        line = line.strip(" ")  # 両端の空白は除去
-        if "::" in line:  # コメントの処理
-            line = remove_comments(line)
-        if 'begin' in line:  # 本体部に入ったら終わり
+    category2articles = create_key2list(CATEGORIES)
+    # 単語、改行、::、;で区切ってファイルの内容を取得
+    file_words = re.findall(r"\w+|\n|::|;", contents)
+    is_comment = False
+    environ_words = list()
+
+    # mizファイルから環境部を抜き出す
+    for word in file_words:
+        # コメント行の場合
+        if word == "::" and not is_comment:
+            is_comment = True
+            continue
+        # コメント行の終了
+        if re.search(r"\n", word) and is_comment:
+            is_comment = False
+            continue
+        # コメント以外の部分(environ ~ beginまで)
+        if not is_comment:
+            environ_words.append(word)
+            # 本体部に入ったら、ループから抜け出す
+            if re.match(r"begin", word):
+                break
+
+    # 改行文字の削除
+    environ_words = [w for w in environ_words if not re.match(r"\n", w)] 
+
+    # カテゴリでどのarticleを参照しているかを得る
+    category_name = str()
+    for word in environ_words:
+        # 環境部の終了条件
+        if re.match(r"begin", word):
             break
-        else:
-            for category in categories:
-                if category in line:  # 環境部に入った場合、どのカテゴリに入ったかを保存する。
-                    exist_category = switch_to_true_only_select_key(exist_category, category)
-
-        for category, exist in exist_category.items():
-            if exist:
-                # article名，カテゴリ名を保存する．
-                category2dependency_articles[category] += re.findall(r'(\w+)', line)
-
-    for category, dependency_articles in category2dependency_articles.items():
-        while category in dependency_articles:
-            dependency_articles.remove(category)
-
-    return category2dependency_articles
+        # カテゴリ名が来たとき
+        if word in category2articles.keys():
+            category_name = word
+            continue
+        # ;でそのカテゴリでの参照が終わったとき
+        if re.match(r";", word):
+            category_name = str()
+            continue
+        # カテゴリ名が決まっているとき
+        if category_name:
+            category2articles[category_name].append(word)
+        
+    return category2articles
 
 
 def create_key2list(keys):
