@@ -205,32 +205,37 @@ def search_removable_dependency(node, node2ancestors):
 """
 
 
-def assign_top_node(node_list):
+def assign_level(nodes):
+    top_nodes = assign_top_node(nodes)
+    for top_node in top_nodes:
+        assign_level2node_recursively(nodes, top_node, 0)
+
+
+def assign_top_node(nodes):
     """
-    グラフのルートを決定する。ルートは矢印が出ていない(参照をしていない)ノードとなる。
+    グラフのルートを決定する。ルートとは矢印が出ていない(参照をしていない)ノードである。
 　　その後、level2node()でその下の階層のノードを決めていく。
-
     Args:
-        node_list:全ノードをNodeクラスでまとめたリスト。
-
+        nodes:全ノードをNodeクラスでまとめたリスト。
     Return:
     """
-    for top_node in node_list:
-        if not top_node.targets:
+    top_nodes = []
+    for top_node in nodes:
+        if not top_node.targets and top_node.sources:
             top_node.y = 0
             top_node.x = 0
-            assign_level2node_recursively(node_list, top_node, 0)
+            top_nodes.append(top_node)
+    return top_nodes
 
 
-def assign_level2node_recursively(node_list, target, target_level):
+def assign_level2node_recursively(nodes, target, target_level):
     """
     階層が1以上（y座標が1以上）のノードの階層を再帰的に決定する。階層の割当は次のルールに従う。
     ・まだ階層を割り当てていないノードならば、targetの1つ下の階層に割り当てる。そして、再帰する。
     ・既に座標を割り当てており、その階層が今の階層(assign_node_level)以上高い階層ならば、一つ下の階層に再割当する。
 　　・既に階層を割り当てており、その階層が今の階層よりも低い階層ならば、何もしない。
-
     Args:
-        node_list: 全ノードをNodeクラスでまとめたリスト。
+        nodes: 全ノードをNodeクラスでまとめたリスト。
         target: ターゲットとなるノード。このノードを指すノードに階層を割り当てていく。
         target_level: targetの階層。targetを指すノードは基本的にこの階層の1つ下の階層に割り当てられる。
     """
@@ -239,24 +244,22 @@ def assign_level2node_recursively(node_list, target, target_level):
         if assign_node.x < 0:
             assign_node.y = assign_node_level
             assign_node.x = 0
-            assign_level2node_recursively(node_list, assign_node, assign_node_level)
-        elif assign_node.x > -1 and assign_node.y <= assign_node_level:
+            assign_level2node_recursively(nodes, assign_node, assign_node_level)
+        elif assign_node.y <= assign_node_level:
             assign_node.y = assign_node_level
-            assign_level2node_recursively(node_list, assign_node, assign_node_level)
+            assign_level2node_recursively(nodes, assign_node, assign_node_level)
 
 
-def assign_x_sequentially(node_list):
+def assign_x_sequentially(nodes):
     """
     全てのノードに対して、x座標を割り当てる。
-
     Args:
-        node_list:全ノードをNodeクラスでまとめたリスト。
+        nodes:全ノードをNodeクラスでまとめたリスト。
     """
     y2x = defaultdict(int)
-    for node in node_list:
+    for node in nodes:
         node.x = y2x[node.y]
         y2x[node.y] += 1
-
 
 """
 #2. 交差削減
@@ -826,8 +829,9 @@ def main():
 
     node_list = create_node_list(shuffle_dict(input_node_dict))
     remove_redundant_dependency(node_list)
-    assign_top_node(node_list)
-    assign_x_sequentially(node_list)
+    
+    # 階層割り当て
+    assign_level(node_list)
     cut_edges_higher_than_1(node_list)
     assign_x_sequentially(node_list)
     sort_nodes_by_xcenter(node_list, downward=True)
