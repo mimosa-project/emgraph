@@ -206,14 +206,16 @@ def search_removable_dependency(node, node2ancestors):
 
 
 def assign_level(nodes):
-    top_nodes = assign_top_node(nodes)
+    top_nodes = collect_top_nodes(nodes)
     for top_node in top_nodes:
-        assign_level2node_recursively(nodes, top_node, 0)
+        top_node.x = 0
+        top_node.y = 0
+        assign_level2node_recursively(top_node)    
 
 
-def assign_top_node(nodes):
+def collect_top_nodes(nodes):
     """
-    グラフのルートを決定する。ルートとは矢印が出ていない(参照をしていない)ノードである。
+    グラフのルートを決定する。ルート：矢印が出ていない(参照をしていない)ノードである。
 　　その後、level2node()でその下の階層のノードを決めていく。
     Args:
         nodes:全ノードをNodeクラスでまとめたリスト。
@@ -222,34 +224,30 @@ def assign_top_node(nodes):
     top_nodes = []
     for top_node in nodes:
         if not top_node.targets and top_node.sources:
-            top_node.y = 0
-            top_node.x = 0
             top_nodes.append(top_node)
     return top_nodes
 
 
-def assign_level2node_recursively(nodes, target, target_level):
+def assign_level2node_recursively(assigned_node):
     """
-    階層が1以上（y座標が1以上）のノードの階層を再帰的に決定する。階層の割当は次のルールに従う。
-    ・まだ階層を割り当てていないノードならば、targetの1つ下の階層に割り当てる。そして、再帰する。
-    ・既に座標を割り当てており、その階層が今の階層(assign_node_level)以上高い階層ならば、一つ下の階層に再割当する。
-　　・既に階層を割り当てており、その階層が今の階層よりも低い階層ならば、何もしない。
+    ノードに階層を割り当てる．
+    階層が割り当て済みのノードのsourcesに対して階層を割り当てていく．
+    sources内のノードにおいて，そのノードのtargets内にまだ割り当てられていないノードがあれば，
+    階層を割り当てない．
     Args:
-        nodes: 全ノードをNodeクラスでまとめたリスト。
-        target: ターゲットとなるノード。このノードを指すノードに階層を割り当てていく。
-        target_level: targetの階層。targetを指すノードは基本的にこの階層の1つ下の階層に割り当てられる。
+        assigned_node: 階層が割り当て済みのノード．このノードのsourcesに階層を割り当てていく．
     """
-    assign_node_level = target_level + 1
-    for assign_node in target.sources:
+    assign_node_level = assigned_node.y + 1
+    for assign_node in assigned_node.sources:
         if assign_node.x < 0:
             assign_node.y = assign_node_level
             assign_node.x = 0
-            assign_level2node_recursively(nodes, assign_node, assign_node_level)
+            assign_level2node_recursively(assign_node)
         elif assign_node.y <= assign_node_level:
             assign_node.y = assign_node_level
-            assign_level2node_recursively(nodes, assign_node, assign_node_level)
+            assign_level2node_recursively(assign_node)
 
-
+            
 def assign_x_sequentially(nodes):
     """
     全てのノードに対して、x座標を割り当てる。
