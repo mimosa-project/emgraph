@@ -143,8 +143,8 @@ def remove_waste_edges(nodes):
     """
     node2ancestors = dict()  # key=node, value=keyの全祖先
     for node in nodes:
-        node2ancestors = make_node2ancestors_recursively(node, node2ancestors)[1]
-        waste_edge_list = search_removable_edges(node, node2ancestors)
+        make_node2ancestors_recursively(node, node2ancestors)
+        waste_edge_list = search_waste_edges(node, node2ancestors)
         for source, target in waste_edge_list:
             source.targets.remove(target)
             target.sources.remove(source)
@@ -157,16 +157,17 @@ def make_node2ancestors_recursively(node, node2ancestors):
     Args:
         node: 全祖先を知りたいノード
         node2ancestors: key=ノード, value=keyの全祖先のセット
+    Modify:
+        node2ancestors: key=ノード, value=keyの全祖先のセット
     Return:
-        第1返値：引数nodeの全祖先ノード
-        第2返値：node2ancestors．
+        nodeの全祖先ノード郡．set()
     """
     if not node.targets:
         node2ancestors[node] = set()
-        return set(), node2ancestors
+        return set()
 
     elif node in node2ancestors.keys():
-        return node2ancestors[node], node2ancestors
+        return node2ancestors[node]
 
     ancestors = set()
     for target in node.targets:
@@ -175,14 +176,15 @@ def make_node2ancestors_recursively(node, node2ancestors):
         if target in node2ancestors.keys():
             ancestors = ancestors | node2ancestors[target]
         else:
-            ancestors = ancestors | make_node2ancestors_recursively(target, node2ancestors)[0]
+            ancestors = ancestors | make_node2ancestors_recursively(target, node2ancestors)
     node2ancestors[node] = ancestors
-    return ancestors, node2ancestors
+    return ancestors
 
 
-def search_removable_edges(node, node2ancestors):
+
+def search_waste_edges(node, node2ancestors):
     """
-    複数回参照するノードへのエッジを見つける．
+    複数回参照する(間引きできる)ターゲットを検索し，そのターゲットへのエッジをリストにして渡す．
     Args:
         node: 間引きたいノード(ソース側)。
         node2ancestors: key=nodeのtarget, value=keyの全祖先のノードのセット の辞書。
@@ -191,14 +193,14 @@ def search_removable_edges(node, node2ancestors):
                             source,targetはともにNodeオブジェクト。
     """
     waste_edges = list()
-    # node2ancestorsの中からkeyがnode.targets内に存在するもののみ取ってくる。
-    ancestors_after_the_second_generation = set()
+    ancestors_more_than_2_gen_ago = set()
     for target in node.targets:
-        ancestors_after_the_second_generation = ancestors_after_the_second_generation | node2ancestors[target]
-    waste_targets = ancestors_after_the_second_generation.intersection(node.targets)
-    for removable_target in waste_targets:
-        waste_edges.append((node, removable_target))
+        ancestors_more_than_2_gen_ago = ancestors_more_than_2_gen_ago | node2ancestors[target]
+    waste_targets = ancestors_more_than_2_gen_ago.intersection(node.targets)
+    for target in waste_targets:
+        waste_edges.append((node, target))
     return waste_edges
+
 
 
 """
