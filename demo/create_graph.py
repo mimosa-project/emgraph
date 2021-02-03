@@ -206,11 +206,18 @@ def search_removable_dependency(node, node2ancestors):
 
 
 def assign_level(nodes):
+    """
+    ノードに階層を割り当てる．
+    Args:
+        nodes: 全ノードをNodeクラスでまとめたリスト。
+    """
     top_nodes = collect_top_nodes(nodes)
     for top_node in top_nodes:
         top_node.x = 0
         top_node.y = 0
-        assign_level2node_recursively(top_node)    
+    sorted_nodes = sort_nodes_by_bfs(nodes, top_nodes)
+    sorted_nodes = remove_duplication(sorted_nodes)
+    assign_level2node(sorted_nodes) 
 
 
 def collect_top_nodes(nodes):
@@ -228,25 +235,54 @@ def collect_top_nodes(nodes):
     return top_nodes
 
 
-def assign_level2node_recursively(assigned_node):
+def assign_level2node(sorted_nodes):
     """
-    ノードに階層を割り当てる．
-    階層が割り当て済みのノードのsourcesに対して階層を割り当てていく．
-    sources内のノードにおいて，そのノードのtargets内にまだ割り当てられていないノードがあれば，
-    階層を割り当てない．
+    sort_nodes_by_bfsで並び替えられたノードに階層を割り当てる．
     Args:
-        assigned_node: 階層が割り当て済みのノード．このノードのsourcesに階層を割り当てていく．
+        sorted_nodes: sort_nodes_by_bfsで並び替えられたノード．
     """
-    assign_node_level = assigned_node.y + 1
-    for assign_node in assigned_node.sources:
-        if assign_node.x < 0:
-            assign_node.y = assign_node_level
-            assign_node.x = 0
-            assign_level2node_recursively(assign_node)
-        elif assign_node.y <= assign_node_level:
-            assign_node.y = assign_node_level
-            assign_level2node_recursively(assign_node)
+    for node in sorted_nodes:
+        if node.x < 0:
+            lowest_level  = max(t.y for t in node.targets)
+            node.y = lowest_level + 1
+            node.x = 0
 
+            
+def sort_nodes_by_bfs(nodes, top_nodes):
+    """
+    グラフを幅優先探索し，階層を割り当てる順に並べる．
+    Args:
+        nodes: 全ノードをNodeクラスでまとめたリスト。
+        top_nodes: nodes内のtargetsを持たないノード．
+    """
+    sorted_nodes = list()
+    queue = list()
+    sorted_nodes.extend(top_nodes)
+    queue.extend(top_nodes)
+    while queue:
+        n = queue.pop(0)
+        for s in n.sources:
+            if s in queue:
+                queue.remove(s)
+            sorted_nodes.append(s)
+            queue.append(s)
+    return sorted_nodes
+            
+    
+def remove_duplication(a):
+    """
+    a(list)内の重複を取り除く．
+    重複があった場合，一番後方のindexをもつ値を残す．
+    Args: 
+        a: list
+    Return:
+        a_sorted: aをソートしたもの．
+    """
+    a_reversed = list(reversed(a))
+    a_reversed_not_duplication = sorted(set(a_reversed), key=a_reversed.index)
+    a_sorted = list(reversed(a_reversed_not_duplication))
+    return a_sorted
+    
             
 def assign_x_sequentially(nodes):
     """
