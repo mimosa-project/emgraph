@@ -216,8 +216,12 @@ def assign_level(nodes):
         top_node.x = 0
         top_node.y = 0
     sorted_nodes = sort_nodes_by_bfs(nodes, top_nodes)
-    sorted_nodes = remove_duplication(sorted_nodes)
     assign_level2node(sorted_nodes) 
+    non_assigned_nodes = [n for n in sorted_nodes if n.x < 0]
+    while non_assigned_nodes:
+        print(len(non_assigned_nodes))
+        assign_level2node(non_assigned_nodes)
+        non_assigned_nodes = [n for n in non_assigned_nodes if n.x < 0]
 
 
 def collect_top_nodes(nodes):
@@ -243,6 +247,8 @@ def assign_level2node(sorted_nodes):
     """
     for node in sorted_nodes:
         if node.x < 0:
+            if any([a.x < 0 for a in node.targets]):
+                continue
             lowest_level  = max(t.y for t in node.targets)
             node.y = lowest_level + 1
             node.x = 0
@@ -259,29 +265,16 @@ def sort_nodes_by_bfs(nodes, top_nodes):
     queue = list()
     sorted_nodes.extend(top_nodes)
     queue.extend(top_nodes)
+    visited_nodes = set(top_nodes)
+    
     while queue:
         n = queue.pop(0)
         for s in n.sources:
-            if s in queue:
-                queue.remove(s)
-            sorted_nodes.append(s)
-            queue.append(s)
+            if not s in visited_nodes:
+                sorted_nodes.append(s)
+                visited_nodes.add(s)
+                queue.append(s)
     return sorted_nodes
-            
-    
-def remove_duplication(a):
-    """
-    a(list)内の重複を取り除く．
-    重複があった場合，一番後方のindexをもつ値を残す．
-    Args: 
-        a: list
-    Return:
-        a_sorted: aをソートしたもの．
-    """
-    a_reversed = list(reversed(a))
-    a_reversed_not_duplication = sorted(set(a_reversed), key=a_reversed.index)
-    a_sorted = list(reversed(a_reversed_not_duplication))
-    return a_sorted
     
             
 def assign_x_sequentially(nodes):
