@@ -156,9 +156,7 @@ def make_node2ancestors_recursively(node, node2ancestors):
     となる辞書を作る。
     Args:
         node: 全祖先を知りたいノード
-        node2ancestors: key=ノード, value=keyの全祖先のセット
-    Modify:
-        node2ancestors: key=ノード, value=keyの全祖先のセット
+        node2ancestors: key=ノード, value=keyの全祖先のセット．変更される可能性あり．
     Return:
         nodeの全祖先ノード郡．set()
     """
