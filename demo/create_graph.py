@@ -133,10 +133,9 @@ def create_node_list(input_node_dict):
 間引き
 """
 
-
-def remove_redundant_dependency(nodes):
+def remove_waste_edges(nodes):
     """
-    エッジ(依存関係)の間引きを行う。
+    エッジの間引きを行う。
     各ノードのターゲットから、間引いてよいターゲットを見つけ、間引く。
     Args:
         nodes: 間引きを行いたいノード(1個以上)
@@ -145,10 +144,8 @@ def remove_redundant_dependency(nodes):
     node2ancestors = dict()  # key=node, value=keyの全祖先
     for node in nodes:
         make_node2ancestors_recursively(node, node2ancestors)
-
-    for node in nodes:
-        removable_dependency_list = search_removable_dependency(node, node2ancestors)
-        for source, target in removable_dependency_list:
+        waste_edge_list = search_waste_edges(node, node2ancestors)
+        for source, target in waste_edge_list:
             source.targets.remove(target)
             target.sources.remove(source)
 
@@ -159,45 +156,49 @@ def make_node2ancestors_recursively(node, node2ancestors):
     となる辞書を作る。
     Args:
         node: 全祖先を知りたいノード
-        node2ancestors: key=ノード, value=keyの全祖先のセット
+        node2ancestors: key=ノード, value=keyの全祖先のセット．変更される可能性あり．
     Return:
-        nodeにターゲットが存在しない：要素がnodeのみのセット
-        nodeがnode2ancestors.keys()に存在する:node2ancestors[node]
-        それ以外：nodeの全祖先のノードのセット
+        nodeの全祖先ノード郡．set()
     """
-    if node in node2ancestors:
-        return node2ancestors[node]
-
     if not node.targets:
         node2ancestors[node] = set()
-        return {node}
+        return set()
+
+    elif node in node2ancestors.keys():
+        return node2ancestors[node]
 
     ancestors = set()
     for target in node.targets:
-        ancestors |= {target}
-        ancestors |= make_node2ancestors_recursively(target, node2ancestors)
+        assert(target.name != node.name)
+        ancestors = ancestors | {target}
+        if target in node2ancestors.keys():
+            ancestors = ancestors | node2ancestors[target]
+        else:
+            ancestors = ancestors | make_node2ancestors_recursively(target, node2ancestors)
     node2ancestors[node] = ancestors
     return ancestors
 
 
-def search_removable_dependency(node, node2ancestors):
+
+def search_waste_edges(node, node2ancestors):
     """
-    取り除いてもよいエッジ(依存関係)を見つける。
+    複数回参照する(間引きできる)ターゲットを検索し，そのターゲットへのエッジをリストにして渡す．
     Args:
         node: 間引きたいノード(ソース側)。
         node2ancestors: key=nodeのtarget, value=keyの全祖先のノードのセット の辞書。
     Return:
-        removable_dependency_list: 間引いてよいエッジ(source, target)のリスト。
-                                source,targetはともにNodeオブジェクト。
+        waste_edges: 間引いてよいエッジ(source, target)のリスト。
+                            source,targetはともにNodeオブジェクト。
     """
-    removable_dependency_list = list()
-    all_target_ancestors = set()
+    waste_edges = list()
+    ancestors_more_than_2_gen_ago = set()
     for target in node.targets:
-        all_target_ancestors |= node2ancestors[target]
-    for target in node.targets:
-        if target in all_target_ancestors:
-            removable_dependency_list.append((node, target))
-    return removable_dependency_list
+        ancestors_more_than_2_gen_ago = ancestors_more_than_2_gen_ago | node2ancestors[target]
+    waste_targets = ancestors_more_than_2_gen_ago.intersection(node.targets)
+    for target in waste_targets:
+        waste_edges.append((node, target))
+    return waste_edges
+
 
 
 """
@@ -825,7 +826,8 @@ def main():
                        }
 
     node_list = create_node_list(shuffle_dict(input_node_dict))
-    remove_redundant_dependency(node_list)
+    # 間引き
+    remove_waste_edges(node_list)
     assign_top_node(node_list)
     assign_x_sequentially(node_list)
     cut_edges_higher_than_1(node_list)
