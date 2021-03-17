@@ -6,251 +6,325 @@ import itertools
 from pathlib import Path
 from pprint import pprint
 
-MML_DIRECTORY_PATH = Path("mmlfull")
+MML_DIRECTORY_PATH = Path("mml")
 
-def read_miz_files():
-    """
-    MML_DIRECTORY_PATHで指定したディレクトリ内のmizファイルをすべて読み込む。
-    Args:
-    Return:
-        text_lines: keyがmizファイル名、valueがファイルの中身
-    """
-    text_lines = dict()
 
+
+def get_mizfiles_name():
+    """
+    MML_DIRECTORY_PATH内のmizファイルの名前の一覧をリストで取得する
+    """
     cwd = os.getcwd()
     try:
         os.chdir(MML_DIRECTORY_PATH)
         miz_files = glob.glob("*.miz")
-        for mf in miz_files:
-            with open(mf, encoding="utf-8", errors="ignore") as f:
-                filename = str.upper(mf[0:-4])  # ファイル名の.mizの部分を除去 
-                text_lines[filename] = f.readlines()
+    finally:
+        os.chdir(cwd)
+
+    return miz_files
+
+def read_miz_file(miz_file):
+    """
+    引数で指定したmizファイルをreadlinesで読み込む。
+    Args:
+        miz_file: 読み込むファイル
+    Return:
+        読み込んだファイルの名前(str)と中身(list)
+    """
+    text_lines = []
+
+    cwd = os.getcwd()
+    try:
+        os.chdir(MML_DIRECTORY_PATH)
+        with open(miz_file, encoding="utf-8", errors="ignore") as f:
+            # ファイル名の.mizの部分を除去し大文字に
+            file_name = str.upper(miz_file[0:-4])
+            text_lines = f.readlines()
 
     finally:
         os.chdir(cwd)
 
-    return text_lines
+    return file_name, text_lines
 
 
-
-def make_quotation_dict(text_lines):
+def make_quotation_dict(file_name, text_lines, quotation_dict):
     """
     mizファイルから引用部を抜き出した辞書を作成する
     Args:
-        text_lines: keyがmizファイル名、valueがファイルの中身
-    Return:
-        nodes = {
-        }
-
+        file_name: ファイル名(例:ABCMIZ_0)
+        text_lines: ファイルの中身をリストで保持
+        quotation_dict: 出力を格納するための入れ物
     """
-    # 全ファイルのtheoremのラベルを取得
-    th_label = make_ThLabel_dict(text_lines)
 
-    quotation_dict = dict()
-    pattern = r"begin"\
-                "|theorem.*\n"\
-                "|definition.*\n"\
-                "|registration.*\n"\
-                "|notation.*\n"\
-                "|reserve"\
-                "|::.CT"\
-                "|::.CD"
+    label_dict = make_Label_dict(text_lines)
     
-    for filename, lines in text_lines.items():
+    is_theorem = False
+    is_def = False
+    exist_key = False
+    defpred_flag = False
+    is_contains_lf = False  # 複数行に渡って書かれていればTrue
+    theorem_number = 0
+    def_number = 0
+    prev_line = ''  # by以降が複数行にわたるときに前の行を保存しておく
+    
+    
+    for line in text_lines:
+        #print(line) #テスト用
+        # theoremの終わり
+        if line == '\n' and is_theorem == True:
+            is_theorem = False
 
-        is_theorem = False
-        is_def = False
-        exist_key = False
-        is_contains_lf = False
-        theorem_number = 0
-        def_number = 0
-        prev_line = ''  # by以降が複数行にわたるときに前の行を保存しておく
+        # definitionの終わり判定
+        if line == "end;\n" and is_def == True:
+            is_def = False
+            exist_key = False
+
         
-        for line in lines:
-            # theoremの終わり
-            if line == '\n' and is_theorem == True:
-                is_theorem = False
+        # コメント行読み飛ばし、またCT、CDの処理
+        if re.match(r'::', line):
+            if re.match(r"::.CT", line):
+                if re.search(r'\d+', line):
+                    theorem_number = theorem_number + int(re.sub("\D*", "", line))
+                else:
+                    theorem_number += 1
 
-            # definitionの終わり判定
-            if is_def == True and re.match(pattern, line):
-                is_def = False
-                exist_key = False
+            if re.match(r"::.CD", line):
+                if re.search(r'\d+', line):
+                    def_number = def_number + int(re.sub("\D*", "", line))
+                else:
+                    def_number += 1
 
-            # コメント行読み飛ばし、またCT、CDの処理
-            if re.match(r'::', line):
-                if re.match(r"::.CT", line):
-                    if re.search(r'\d+', line):
-                        theorem_number = theorem_number + int(re.sub("\D*", "", line))
-                    else:
-                        theorem_number += 1
-                
-                if re.match(r"::.CD", line):
-                    if re.search(r'\d+', line):
-                        def_number = def_number + int(re.sub("\D*", "", line))
-                    else:
-                        def_number += 1
+            continue
 
-                continue
-            
+        # theoremの始まり判定
+        if re.match(r"\btheorem\b", line):
+            is_theorem = True
+            theorem_number += 1
+            quotation_dict[file_name + ':' + str(theorem_number)] = list()
+            continue
 
-            # theoremの始まり判定
-            if line == "theorem\n" or line[0:8] == "theorem " or re.match(r"Th\d+", line):
-                is_theorem = True
-                theorem_number += 1
-                quotation_dict[filename + ':' + str(theorem_number)] = list()
-                continue
-                     
-            # definitionの始まり判定
-            if line == "definition\n" or line[0:11] == "definition ":
-                is_def = True
-                continue
-
-            # definitionの番号を割り当てる
-            if not re.search(r"defpred", line) and re.search(r"means|equals", line) and is_def:
-                def_number += 1
-                exist_key = True
-                quotation_dict[filename + ':def' + str(def_number)] = list()
-                continue
-
-            #theoremとdefinitionの中
-            if is_theorem == True or is_def == True and exist_key == True:
-                
-                # by以降が複数行にわたる時それらを1行にまとめる
-                if is_contains_lf:
-                    line = prev_line + ' ' + line
-                    is_contains_lf = False
-
-                #by～;までに改行が含まれない場合
-                if re.search(r"\sby.*\.=|\sby.*;|\sfrom.*\(|from .*;", line):
-                    quoted_part = re.search(r"\sby.*\.=|\sby.*;|\sfrom.*\(|\sfrom.*;", line)  # 引用部を文字列のまま抜き出す
-                    if quoted_part != None:
-                        quotation = extract_quoted_parts(quoted_part.group(), th_label[filename], filename)
-                    if quotation:
-                        # theoremの場合キーは"filename:番号"
-                        if is_theorem:
-                            quotation_dict[filename + ':' + str(theorem_number)].append(quotation)
-                        # definitionの場合キーは"filename:def番号
-                        if is_def and exist_key:
-                            quotation_dict[filename + ':def' + str(def_number)].append(quotation)
-                        continue
-                    continue
-
-                #by～;までに改行が含まれる場合
-                if re.search(r"by.*\n|from.*\n", line):
-                    prev_line = line[:-1]  # 末尾の改行を除いた部分を保存
-                    is_contains_lf = True
-                    continue
-
-            
-
-                    
-
-    #quotation_dictのvalueのリストをフラットに
-    for key, value in quotation_dict.items():
-        quotation_dict[key] = list(set(list(itertools.chain.from_iterable(value))))
-
-    #urlを追加するために整形
-    nodes = dict()
-    for key, value in quotation_dict.items():
-        nodes[key] = dict()
-        nodes[key]["dependency_articles"] = list()
+        # definitionの始まり判定
+        if re.match(r"\bdefinition\b", line):
+            is_def = True
+            continue
         
-        for v in value:
-            if v in quotation_dict.keys() and not v is key:
-                nodes[key]["dependency_articles"].append(v)
+        # defpredが複数行になっている場合それらを一行にまとめる
+        if defpred_flag == True:
+            line = prev_line + ' ' + line
+            defpred_flag = False
+        if is_def == True and re.search(r"\bdefpred\b", line):
+            if re.search(r"\bdefpred\b.*;", line):
+                pass
+            else:
+                prev_line = line[:-1]
+                defpred_flag = True
+                continue
 
-        # definitionのURL追加
-        if 'def' in key:
-            nodes[key]['url'] = "http://mizar.org/version/current/html/"\
-                                + str.lower(re.sub(r':.*', '', key)) + ".html#D" + re.sub(r'.*:def', '', key)
-        # theoremのURL追加
-        else:
-            nodes[key]['url'] = "http://mizar.org/version/current/html/"\
-                                + str.lower(re.sub(r':.*', '', key)) + ".html#T" + re.sub(r'.*:', '', key)
+        # definitionの番号を割り当てる
+        if not re.search(r"\bdefpred\b.*;", line) and re.search(r"means|equals", line) and is_def:
+            def_number += 1
+            exist_key = True  
+            quotation_dict[file_name + ':def' + str(def_number)] = list()
+            continue
 
-    return nodes
+        #theoremとdefinitionの中
+        if is_theorem == True or is_def == True and exist_key == True:
 
+            # by以降が複数行にわたる時それらを1行にまとめる
+            if is_contains_lf:
+                line = prev_line + ' ' + line
+                is_contains_lf = False
 
+            #by～;までに改行が含まれない場合
+            if re.search(r"\sby.*\.=|\sby.*;|\sfrom.*\(|\sfrom .*;", line):
+                quoted_part = re.search(r"\sby.*\.=|\sby.*;|\sfrom.*\(|\sfrom.*;", line)  # 引用部を文字列のまま抜き出す
+                if quoted_part != None:
+                    quotation = extract_quoted_parts(quoted_part.group(), label_dict, file_name)
+                if quotation:
+                    # theoremの場合キーは"filename:番号"
+                    if is_theorem:
+                        quotation_dict[file_name + ':' + str(theorem_number)].append(quotation)
+                    # definitionの場合キーは"filename:def番号
+                    if is_def and exist_key:
+                        quotation_dict[file_name + ':def' + str(def_number)].append(quotation)
+                    continue
+                continue
 
-def extract_quoted_parts(quoted_part, th_label_dict, filename):
+            #by～;までに改行が含まれる場合
+            if re.search(r"by.*\n|from.*\n", line):
+                prev_line = line[:-1]  # 末尾の改行を除いた部分を保存
+                is_contains_lf = True
+                continue
+
+    return quotation_dict
+
+def extract_quoted_parts(quoted_part, label_dict, filename):
     """
     引用部文字列から引用元だけをリストにまとめる。
     また、引用元の名前を修正
     Args:
         quoted_part: 引用部分(例："by ~ ;" , "from ~ ;")
-        th_label_dict: ファイル内のtheoremのラベル(Th1:1,Th2:2,...)をまとめたリスト
+        label_dict: ファイル内のtheoremとdefinitionのラベル(Th1:1,Th2:2,...)をまとめたリスト
         filename: ファイルの名前
     Return:
-        引用元だけをまとめたリスト
+        引用だけをまとめたリスト
     """
     removed = re.sub("by|from|\s|;|\n|\.=|\(", '', quoted_part)  # 必要のないものを除去
-    quotation1 = removed.split(',')
+    refs = removed.split(',')
 
-    quotation2 = list()
+    renamed_refs = list()
 
     #theoremの名前を変更し、同じ命題内での引用を除去
-    for q in quotation1:
+    for r in refs:
 
-        if q in th_label_dict.keys():
-            quotation2.append(filename + ':' + th_label_dict[q])
+        if r in label_dict.keys():
+            renamed_refs.append(filename + ':' + label_dict[r])
         else:
             # 別ファイルからの引用の場合
-            if ':' in q:
-                quotation2.append(q)
+            if ':' in r:
+                renamed_refs.append(r)
             
-            # 同じファイルのdefの引用の場合
-            if re.search(r"Def\d*", q):
-                quotation2.append(filename + ':' + str.lower(q))
 
 
 
-    return quotation2
+    return renamed_refs
 
-
-
-def make_ThLabel_dict(text_lines):
+        
+def make_Label_dict(text_lines):
     """
-    各ファイルのtheoremのラベルをまとめたリストをつくる
+    theoremとdefinitionのラベルをまとめたリストをつくる
     Args:
-        text_lines: mizファイル
+        text_lines:
     Return:
-        th_label: keyがファイル名、valueがtheoremのラベルと番号をまとめたdict
-                　th_label = {
-                    ファイル１: {Th1:1,Th3:3,Th4:4},
-                    ファイル２: {Th2:2,Th3:3},
+        label_dict: keyがファイル名、valueがラベルと番号をまとめたdict
+                　label_dict = {
+                    Th1: 1,
+                    Th2: 2,
+                    Th4: 4,
                     ...
                   }
     """
-    th_label = dict()
+    label_dict = dict()
+    th_num = 0
+    def_num = 0
+    in_def = False
+    prev_line = ''
+    defpred_flag = False
+    for line in text_lines:
+        # ::$CT(canceled theorem)の処理
+        if re.match(r"::.CT", line):
+            if re.search(r'\d+', line):
+                th_num = th_num + int(re.sub("\D*", "", line))
+            else:
+                th_num += 1
 
-    for filename, lines in text_lines.items():
-        th_label[filename] = dict()
-        number = 0
-        for line in lines:
-            # ::$CT(canceled theorem)の処理
-            if re.match(r"::.CT", line):
-                number += 1
+        # ::$CD(canceled definition)の処理
+        if re.match(r"::.CD", line):
+            if re.search(r'\d+', line):
+                def_num = def_num + int(re.sub("\D*", "", line))
+            else:
+                def_num += 1
 
-            # ラベルがついてないtheorem
-            if line == "theorem\n":
-                number += 1
+        # theoremのラベルについての処理
+        if re.match(r"\btheorem\b",line):
+            # ラベルがあるとき
+            if re.match(r"theorem\s+([a-zA-Z0-9]+):", line):
+                th_num += 1
+                label_dict[re.match(r"theorem\s+([a-zA-Z0-9]+):", line).group(1)] = str(th_num)
+                continue
+            # ラベルがないとき
+            else:
+                th_num += 1
                 continue
 
-            # ラベルがついたtheoremはそのラベルと番号を紐づける
-            if line[0:8] == "theorem ":
-                number += 1
-                th_label[filename][re.sub("theorem\s|:|\n", "", line)] = str(number)
 
-    return th_label
+        # definitionのラベルについての処理
+        if line == "end;\n" and in_def == True:
+            in_def = False
+
+        if re.match(r"\bdefinition\b", line):
+            in_def = True
+            continue
+    
+        if defpred_flag == True:
+            line = prev_line + ' ' + line
+            defpred_flag = False
+        if in_def == True and re.search(r"\bdefpred\b", line):
+            if re.search(r"\bdefpred\b.*;", line):
+                pass
+            else:
+                prev_line = line[:-1]
+                defpred_flag = True
+                continue
+
+        if not re.search(r"\bdefpred\b.*;", line) and re.search(r"means|equals", line) and in_def:
+            def_num += 1
+
+        if re.search(r":([a-zA-Z0-9]+):", line) and in_def:
+            label_dict[re.search(r":([a-zA-Z0-9]+):", line).group(1)] = "def" + str(def_num)
 
 
-# -----------------------------------------------------------------------------------------
-text = read_miz_files()
-nodes = make_quotation_dict(text)
+    return label_dict
 
 
-with open("nodes.json", mode='w') as f:
-    json.dump(nodes, f, indent=4)
 
-#pprint(nodes)
-        
+def reformat_quotation_dict(quotation_dict):
+    """
+    quotation_dictに対してグラフのノード化のために
+        - 参照先のリストをフラットにする
+        - 定理のURLを追加
+    を行う。
+    Args:
+        quotation_dict
+    Return:
+        keyが参照元(str)、valueが参照先(list)とURL(str)の辞書
+        例:{
+            "ABCMIZ_0:1" : {
+                "dependency_article": [参照先のリスト],
+                "url": "参照元定理(ABCMIZ_0:1)のurl
+            },
+            ABCMIZ_0:2 : {},
+            ...
+        }
+    """
+    # quotation_dictのvalueのリストをフラットに
+    for key, value in quotation_dict.items():
+        quotation_dict[key] = list(set(list(itertools.chain.from_iterable(value))))
+
+    reformatted_dict = dict()
+    for key, value in quotation_dict.items():
+        reformatted_dict[key] = dict()
+        reformatted_dict[key]["dependency_articles"] = list()
+
+        for v in value:
+            if v in quotation_dict.keys() and not v is key:
+                reformatted_dict[key]["dependency_articles"].append(v)
+
+        # definitionのURL追加
+        if 'def' in key:
+            reformatted_dict[key]['url'] = "http://mizar.org/version/current/html/"\
+                                + str.lower(re.sub(r':.*', '', key)) + ".html#D" + re.sub(r'.*:def', '', key)
+        # theoremのURL追加
+        else:
+            reformatted_dict[key]['url'] = "http://mizar.org/version/current/html/"\
+                                + str.lower(re.sub(r':.*', '', key)) + ".html#T" + re.sub(r'.*:', '', key)
+
+    return reformatted_dict
+    
+
+def main():
+    mizfiles = get_mizfiles_name()
+    quotation_dict = dict()
+    
+    for m in mizfiles:
+        print("processing file: " + m)
+        fn, tl = read_miz_file(m)
+        make_quotation_dict(fn, tl, quotation_dict)
+
+
+    nodes = reformat_quotation_dict(quotation_dict)
+    with open("nodes1.json", mode='w') as f:
+        json.dump(nodes, f, indent=4)
+
+if __name__ == "__main__":
+    main()
