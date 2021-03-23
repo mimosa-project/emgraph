@@ -54,13 +54,18 @@ def make_quotation_dict(file_name, text_lines, quotation_dict):
         file_name: ファイル名(例:ABCMIZ_0)
         text_lines: ファイルの中身をリストで保持
         quotation_dict: 出力を格納するための入れ物
+            {
+                "ABCMIZ_0:1" : [参照先のリスト],
+                "ABCMIZ_0:2" : [],
+                ...
+            }
     """
 
     label_dict = make_Label_dict(text_lines)
     
     is_theorem = False
     is_def = False
-    exist_key = False
+    is_numbered_definition = False
     defpred_flag = False
     is_contains_lf = False  # 複数行に渡って書かれていればTrue
     theorem_number = 0
@@ -77,18 +82,18 @@ def make_quotation_dict(file_name, text_lines, quotation_dict):
         # definitionの終わり判定
         if line == "end;\n" and is_def == True:
             is_def = False
-            exist_key = False
+            is_numbered_definition = False
 
         
         # コメント行読み飛ばし、またCT、CDの処理
         if re.match(r'::', line):
-            if re.match(r"::.CT", line):
+            if re.match(r"::\$CT", line):
                 if re.search(r'\d+', line):
                     theorem_number = theorem_number + int(re.sub("\D*", "", line))
                 else:
                     theorem_number += 1
 
-            if re.match(r"::.CD", line):
+            if re.match(r"::\$CD", line):
                 if re.search(r'\d+', line):
                     def_number = def_number + int(re.sub("\D*", "", line))
                 else:
@@ -123,12 +128,12 @@ def make_quotation_dict(file_name, text_lines, quotation_dict):
         # definitionの番号を割り当てる
         if not re.search(r"\bdefpred\b.*;", line) and re.search(r"means|equals", line) and is_def:
             def_number += 1
-            exist_key = True  
+            is_numbered_definition = True  
             quotation_dict[file_name + ':def' + str(def_number)] = list()
             continue
 
         #theoremとdefinitionの中
-        if is_theorem == True or is_def == True and exist_key == True:
+        if is_theorem == True or is_def == True and is_numbered_definition == True:
 
             # by以降が複数行にわたる時それらを1行にまとめる
             if is_contains_lf:
@@ -136,8 +141,9 @@ def make_quotation_dict(file_name, text_lines, quotation_dict):
                 is_contains_lf = False
 
             #by～;までに改行が含まれない場合
-            if re.search(r"\sby.*\.=|\sby.*;|\sfrom.*\(|\sfrom .*;", line):
-                quoted_part = re.search(r"\sby.*\.=|\sby.*;|\sfrom.*\(|\sfrom.*;", line)  # 引用部を文字列のまま抜き出す
+            m = re.search(r"\sby.*\.=|\sby.*;|\sfrom.*\(|\sfrom .*;", line):
+            if m:
+                quoted_part = m  # 引用部を文字列のまま抜き出す
                 if quoted_part != None:
                     quotation = extract_quoted_parts(quoted_part.group(), label_dict, file_name)
                 if quotation:
@@ -145,14 +151,14 @@ def make_quotation_dict(file_name, text_lines, quotation_dict):
                     if is_theorem:
                         quotation_dict[file_name + ':' + str(theorem_number)].append(quotation)
                     # definitionの場合キーは"filename:def番号
-                    if is_def and exist_key:
+                    if is_def and is_numbered_definition:
                         quotation_dict[file_name + ':def' + str(def_number)].append(quotation)
                     continue
                 continue
 
             #by～;までに改行が含まれる場合
             if re.search(r"by.*\n|from.*\n", line):
-                prev_line = line[:-1]  # 末尾の改行を除いた部分を保存
+                prev_line = line.rstrip('\r\n')  # 末尾の改行を除いた部分を保存
                 is_contains_lf = True
                 continue
 
@@ -177,7 +183,7 @@ def extract_quoted_parts(quoted_part, label_dict, filename):
     #theoremの名前を変更し、同じ命題内での引用を除去
     for r in refs:
 
-        if r in label_dict.keys():
+        if r in label_dict:
             renamed_refs.append(filename + ':' + label_dict[r])
         else:
             # 別ファイルからの引用の場合
@@ -212,14 +218,14 @@ def make_Label_dict(text_lines):
     defpred_flag = False
     for line in text_lines:
         # ::$CT(canceled theorem)の処理
-        if re.match(r"::.CT", line):
+        if re.match(r"::\$CT", line):
             if re.search(r'\d+', line):
                 th_num = th_num + int(re.sub("\D*", "", line))
             else:
                 th_num += 1
 
         # ::$CD(canceled definition)の処理
-        if re.match(r"::.CD", line):
+        if re.match(r"::\$CD", line):
             if re.search(r'\d+', line):
                 def_num = def_num + int(re.sub("\D*", "", line))
             else:
@@ -228,9 +234,10 @@ def make_Label_dict(text_lines):
         # theoremのラベルについての処理
         if re.match(r"\btheorem\b",line):
             # ラベルがあるとき
-            if re.match(r"theorem\s+([a-zA-Z0-9]+):", line):
+            m = re.match(r"theorem\s+([a-zA-Z0-9]+):", line)
+            if m:
                 th_num += 1
-                label_dict[re.match(r"theorem\s+([a-zA-Z0-9]+):", line).group(1)] = str(th_num)
+                label_dict[m.group(1)] = str(th_num)
                 continue
             # ラベルがないとき
             else:
@@ -260,7 +267,8 @@ def make_Label_dict(text_lines):
         if not re.search(r"\bdefpred\b.*;", line) and re.search(r"means|equals", line) and in_def:
             def_num += 1
 
-        if re.search(r":([a-zA-Z0-9]+):", line) and in_def:
+        m = re.search(r":([a-zA-Z0-9]+):", line)
+        if m and in_def:
             label_dict[re.search(r":([a-zA-Z0-9]+):", line).group(1)] = "def" + str(def_num)
 
 
@@ -275,7 +283,12 @@ def reformat_quotation_dict(quotation_dict):
         - 定理のURLを追加
     を行う。
     Args:
-        quotation_dict
+        quotation_dict(整形前)
+        {
+            "ABCMIZ_0:1" : [参照先のリスト],
+            "ABCMIZ_0:2" : [],
+            ...
+        }
     Return:
         keyが参照元(str)、valueが参照先(list)とURL(str)の辞書
         例:{
@@ -283,7 +296,7 @@ def reformat_quotation_dict(quotation_dict):
                 "dependency_article": [参照先のリスト],
                 "url": "参照元定理(ABCMIZ_0:1)のurl
             },
-            ABCMIZ_0:2 : {},
+            "ABCMIZ_0:2" : {},
             ...
         }
     """
